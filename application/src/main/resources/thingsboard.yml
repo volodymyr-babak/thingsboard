@@ -111,6 +111,32 @@ security:
     allowClaimingByDefault: "${SECURITY_CLAIM_ALLOW_CLAIMING_BY_DEFAULT:true}"
     # Time allowed to claim the device in milliseconds
     duration: "${SECURITY_CLAIM_DURATION:60000}" # 1 minute, note this value must equal claimDevices.timeToLiveInMinutes value
+  basic:
+    enabled: false
+#  oauth2:
+#    sso:
+#      loginPath: /api/auth/login3
+#    client:
+#      clientId: d9a55511-2f9d-407f-886d-3b3d6a1c2e3f
+#      clientSecret: 4bJ-WvIWEXyiDebLKRYWPqEaTv001SFpkSdVnZd_wIcyXEAhQuKsPbji2Do8two2jpeyPATJZepDd4olosmNbA
+#      accessTokenUri: https://idp-q.schwarz/nidp/oauth/nam/token
+#      userAuthorizationUri: https://idp-q.schwarz/nidp/oauth/nam/authz
+#      useCurrentUri: false
+#      preEstablishedRedirectUri: http://localhost:8080/login/oauth2/code/
+#    resource:
+#      userInfoUri: https://idp-q.schwarz/nidp/oauth/nam/userinfo
+  oauth2:
+    sso:
+      loginPath: /api/auth/login3
+    client:
+      clientId: dVH9reqyqiXIG7M2wmamb0ySue8zaM4g
+      clientSecret: EYAfAGxwkwoeYnb2o2cDgaWZB5k97OStpZQPPvcMMD-SVH2BuughTGeBazXtF5I6
+      accessTokenUri: https://dev-r9m8ht0k.auth0.com/oauth/token
+      userAuthorizationUri: https://dev-r9m8ht0k.auth0.com/authorize
+      useCurrentUri: false
+      preEstablishedRedirectUri: http://localhost:8080/login/oauth2/code/
+    resource:
+      userInfoUri: https://dev-r9m8ht0k.auth0.com/userinfo
 
 # Dashboard parameters
 dashboard:

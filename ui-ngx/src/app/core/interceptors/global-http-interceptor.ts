@@ -60,6 +60,8 @@ export class GlobalHttpInterceptor implements HttpInterceptor {
   }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    console.log('AAAAA');
+    console.log(req);
     if (req.url.startsWith('/api/')) {
       const config = this.getInterceptorConfig(req);
       const isLoading = !this.isInternalUrlPrefix(req.url);
