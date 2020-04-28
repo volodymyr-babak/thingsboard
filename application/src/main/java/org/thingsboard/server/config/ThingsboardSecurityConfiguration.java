@@ -92,6 +92,8 @@ public class ThingsboardSecurityConfiguration extends WebSecurityConfigurerAdapt
 
     @Value("${security.oauth2.enabled}")
     private boolean oauth2Enabled;
+    @Value("${security.oauth2.client.loginProcessingUrl}")
+    private String loginProcessingUrl;
 
     @Autowired
     @Qualifier("jwtHeaderTokenExtractor")
@@ -204,7 +206,9 @@ public class ThingsboardSecurityConfiguration extends WebSecurityConfigurerAdapt
                 .addFilterBefore(buildWsJwtTokenAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitProcessingFilter, UsernamePasswordAuthenticationFilter.class);
         if (oauth2Enabled) {
-            http.oauth2Login().successHandler(oauth2AuthenticationSuccessHandler);
+            http.oauth2Login()
+                    .loginProcessingUrl(loginProcessingUrl)
+                    .successHandler(oauth2AuthenticationSuccessHandler);
         }
     }
 

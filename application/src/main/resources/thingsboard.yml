@@ -125,6 +125,7 @@ security:
 #      authorizationUri: https://federation-q.auth.schwarz/nidp/oauth/nam/authz
 #      scope: openid,profile,email,siam
 #      redirectUriTemplate: http://localhost:8080/login/oauth2/code/
+#      loginProcessingUrl: /login/oauth2/code/
 #      jwkSetUri: https://federation-q.auth.schwarz/nidp/oauth/nam/keys
 #      authorizationGrantType: authorization_code  # authorization_code, implicit, refresh_token, client_credentials
 #      clientAuthenticationMethod: post # basic, post
@@ -142,6 +143,7 @@ security:
       authorizationUri: https://dev-r9m8ht0k.auth0.com/authorize
       scope: openid,profile,email
       redirectUriTemplate: http://localhost:8080/login/oauth2/code/
+      loginProcessingUrl: /login/oauth2/code/
       jwkSetUri: https://dev-r9m8ht0k.auth0.com/.well-known/jwks.json
       authorizationGrantType: authorization_code  # authorization_code, implicit, refresh_token, client_credentials
       clientAuthenticationMethod: post # basic, post
