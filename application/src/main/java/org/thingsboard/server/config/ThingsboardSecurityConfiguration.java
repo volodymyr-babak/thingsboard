@@ -18,17 +18,12 @@ package org.thingsboard.server.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpRequest;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.ClientHttpRequestExecution;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -38,19 +33,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResourceDetails;
-import org.springframework.security.oauth2.client.token.AccessTokenRequest;
-import org.springframework.security.oauth2.client.token.RequestEnhancer;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.thingsboard.server.dao.audit.AuditLogLevelFilter;
@@ -65,7 +51,6 @@ import org.thingsboard.server.service.security.auth.rest.RestAuthenticationProvi
 import org.thingsboard.server.service.security.auth.rest.RestLoginProcessingFilter;
 import org.thingsboard.server.service.security.auth.rest.RestPublicLoginProcessingFilter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -104,6 +89,8 @@ public class ThingsboardSecurityConfiguration extends WebSecurityConfigurerAdapt
     @Autowired private JwtAuthenticationProvider jwtAuthenticationProvider;
     @Autowired private RefreshTokenAuthenticationProvider refreshTokenAuthenticationProvider;
 
+    @Value("${security.oauth2.enabled}")
+    private boolean oauth2Enabled;
 
     @Autowired
     @Qualifier("jwtHeaderTokenExtractor")
@@ -160,49 +147,6 @@ public class ThingsboardSecurityConfiguration extends WebSecurityConfigurerAdapt
         return filter;
     }
 
-
-    static class AcceptJsonRequestInterceptor implements ClientHttpRequestInterceptor {
-
-        @Override
-        public ClientHttpResponse intercept(HttpRequest request, byte[] body,
-                                            ClientHttpRequestExecution execution) throws IOException {
-            request.getHeaders().setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-            return execution.execute(request, body);
-        }
-
-    }
-
-    static class AcceptJsonRequestEnhancer implements RequestEnhancer {
-
-        @Override
-        public void enhance(AccessTokenRequest request,
-                            OAuth2ProtectedResourceDetails resource,
-                            MultiValueMap<String, String> form, HttpHeaders headers) {
-            headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        }
-
-    }
-
-
-//    @Bean
-//    protected OAuth2LoginAuthenticationFilter buildOAuth2ClientAuthenticationProcessingFilter() throws Exception {
-//        AuthorizationCodeResourceDetails details = new AuthorizationCodeResourceDetails();
-//        details.setClientId("dVH9reqyqiXIG7M2wmamb0ySue8zaM4g");
-//        details.setUserAuthorizationUri("https://dev-r9m8ht0k.auth0.com/authorize");
-//        details.setAccessTokenUri("https://dev-r9m8ht0k.auth0.com/oauth/token");
-//
-//        OAuth2RestTemplate restTemplate = new OAuth2RestTemplate(details);
-//        restTemplate.getInterceptors().add(new AcceptJsonRequestInterceptor());
-//        AuthorizationCodeAccessTokenProvider accessTokenProvider = new AuthorizationCodeAccessTokenProvider();
-//        accessTokenProvider.setTokenRequestEnhancer(new AcceptJsonRequestEnhancer());
-//        restTemplate.setAccessTokenProvider(accessTokenProvider);
-//        OAuth2LoginAuthenticationFilter filter
-//                = new OAuth2LoginAuthenticationFilter(SSO_LOGIN_ENTRY_POINT);
-//        filter.setRestTemplate(restTemplate);
-//        filter.setAuthenticationManager(this.authenticationManager);
-//        return filter;
-//    }
-
     @Bean
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
@@ -257,54 +201,12 @@ public class ThingsboardSecurityConfiguration extends WebSecurityConfigurerAdapt
                 .addFilterBefore(buildJwtTokenAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(buildRefreshTokenProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(buildWsJwtTokenAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(rateLimitProcessingFilter, UsernamePasswordAuthenticationFilter.class)
-                .oauth2Login()
-//                .successHandler(successHandler)
-                .successHandler(oauth2AuthenticationSuccessHandler);
-//                .redirectionEndpoint()
-//                .baseUri("/oauth2/redirect")
-//                .and();
+                .addFilterAfter(rateLimitProcessingFilter, UsernamePasswordAuthenticationFilter.class);
+        if (oauth2Enabled) {
+            http.oauth2Login().successHandler(oauth2AuthenticationSuccessHandler);
+        }
     }
 
-//    @Bean
-//    public ClientRegistrationRepository clientRegistrationRepository(@Autowired Oauth2Settings settings) {
-//        ClientRegistration registration = ClientRegistration.withRegistrationId("A")
-//                 .clientId("d9a55511-2f9d-407f-886d-3b3d6a1c2e3f")
-//                .authorizationUri("https://idp-q.schwarz/nidp/oauth/nam/authz")
-//                .clientSecret("4bJ-WvIWEXyiDebLKRYWPqEaTv001SFpkSdVnZd_wIcyXEAhQuKsPbji2Do8two2jpeyPATJZepDd4olosmNbA")
-//                .tokenUri("https://idp-q.schwarz/nidp/oauth/nam/token")
-//                .redirectUriTemplate("http://localhost:8080/login/oauth2/code/")
-//                .scope("openid,profile,email,siam".split(","))
-//                .clientName("Thingsboard Dev Test Q")
-//                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-//                .userInfoUri("https://idp-q.schwarz/nidp/oauth/nam/userinfo")
-//                .userNameAttributeName("email")
-////                .jwkSetUri("https://dev-r9m8ht0k.auth0.com/.well-known/jwks.json")
-//                .clientAuthenticationMethod(ClientAuthenticationMethod.POST)
-//                .build();
-//
-//        return new InMemoryClientRegistrationRepository(Arrays.asList(registration));
-//    }
-
-    @Bean
-    public ClientRegistrationRepository clientRegistrationRepository(@Autowired Oauth2Settings settings) {
-        ClientRegistration registration = ClientRegistration.withRegistrationId("A")
-                 .clientId("dVH9reqyqiXIG7M2wmamb0ySue8zaM4g")
-                .authorizationUri("https://dev-r9m8ht0k.auth0.com/authorize")
-                .clientSecret("EYAfAGxwkwoeYnb2o2cDgaWZB5k97OStpZQPPvcMMD-SVH2BuughTGeBazXtF5I6")
-                .tokenUri("https://dev-r9m8ht0k.auth0.com/oauth/token")
-                .redirectUriTemplate("http://localhost:8080/login/oauth2/code/")
-                .scope("openid,profile,email".split(","))
-                .clientName("Test app")
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .userInfoUri("https://dev-r9m8ht0k.auth0.com/userinfo")
-                .userNameAttributeName("email")
-                .jwkSetUri("https://dev-r9m8ht0k.auth0.com/.well-known/jwks.json")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.POST)
-                .build();
-
-        return new InMemoryClientRegistrationRepository(Arrays.asList(registration));
-    }
 
     @Bean
     @ConditionalOnMissingBean(CorsFilter.class)
