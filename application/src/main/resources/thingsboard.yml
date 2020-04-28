@@ -131,7 +131,7 @@ security:
 #    resource:
 #      userInfoUri: https://federation-q.auth.schwarz/nidp/oauth/nam/userinfo"
   oauth2:
-    enabled: false
+    enabled: true
     registrationId: A
     userNameAttributeName: email
     client:

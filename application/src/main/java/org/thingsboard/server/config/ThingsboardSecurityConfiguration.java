@@ -18,6 +18,7 @@ package org.thingsboard.server.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
@@ -75,7 +76,7 @@ public class ThingsboardSecurityConfiguration extends WebSecurityConfigurerAdapt
 
     @Autowired private ThingsboardErrorResponseHandler restAccessDeniedHandler;
 
-    @Autowired
+    @Autowired(required = false)
     @Qualifier("oauth2AuthenticationSuccessHandler")
     private AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
 
