@@ -485,6 +485,10 @@ public final class EdgeGrpcSession implements Closeable {
             case ASSIGNED_TO_EDGE:
                 RuleChain ruleChain = ctx.getRuleChainService().findRuleChainById(edgeEvent.getTenantId(), ruleChainId);
                 if (ruleChain != null) {
+                    RuleChainId rootRuleChainId = ctx.getEdgeService().findEdgeById(edge.getTenantId(), edge.getId()).getRootRuleChainId();
+                    if (!edge.getRootRuleChainId().equals(rootRuleChainId)) {
+                        edge.setRootRuleChainId(rootRuleChainId);
+                    }
                     RuleChainUpdateMsg ruleChainUpdateMsg =
                             ctx.getRuleChainUpdateMsgConstructor().constructRuleChainUpdatedMsg(edge.getRootRuleChainId(), msgType, ruleChain);
                     entityUpdateMsg = EntityUpdateMsg.newBuilder()
