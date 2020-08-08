@@ -146,9 +146,8 @@ public class DefaultSyncEdgeService implements SyncEdgeService {
                 public void onSuccess(@Nullable TimePageData<RuleChain> pageData) {
                     if (pageData != null && pageData.getData() != null && !pageData.getData().isEmpty()) {
                         log.trace("[{}] [{}] rule chains(s) are going to be pushed to edge.", edge.getId(), pageData.getData().size());
-                        for (RuleChain ruleChain : pageData.getData()) {
-                            saveEdgeEvent(edge.getTenantId(), edge.getId(), EdgeEventType.RULE_CHAIN, ActionType.ADDED, ruleChain.getId(), null);
-                        }
+                        JsonNode ruleChains = mapper.convertValue(pageData.getData(), JsonNode.class);
+                        saveEdgeEvent(edge.getTenantId(), edge.getId(), EdgeEventType.RULE_CHAIN, ActionType.ADDED, null, ruleChains);
                     }
                 }
 

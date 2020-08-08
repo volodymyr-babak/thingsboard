@@ -51,16 +51,17 @@ message EntityUpdateMsg {
   DeviceCredentialsUpdateMsg deviceCredentialsUpdateMsg = 2;
   RuleChainUpdateMsg ruleChainUpdateMsg = 3;
   RuleChainMetadataUpdateMsg ruleChainMetadataUpdateMsg = 4;
-  DashboardUpdateMsg dashboardUpdateMsg = 5;
-  AssetUpdateMsg assetUpdateMsg = 6;
-  EntityViewUpdateMsg entityViewUpdateMsg = 7;
-  AlarmUpdateMsg alarmUpdateMsg = 8;
-  UserUpdateMsg userUpdateMsg = 9;
-  UserCredentialsUpdateMsg userCredentialsUpdateMsg = 10;
-  CustomerUpdateMsg customerUpdateMsg = 11;
-  RelationUpdateMsg relationUpdateMsg = 12;
-  WidgetsBundleUpdateMsg widgetsBundleUpdateMsg = 13;
-  WidgetTypeUpdateMsg widgetTypeUpdateMsg = 14;
+  RuleChainsSyncUpdateMsg ruleChainsSyncUpdateMsg = 5;
+  DashboardUpdateMsg dashboardUpdateMsg = 6;
+  AssetUpdateMsg assetUpdateMsg = 7;
+  EntityViewUpdateMsg entityViewUpdateMsg = 8;
+  AlarmUpdateMsg alarmUpdateMsg = 9;
+  UserUpdateMsg userUpdateMsg = 10;
+  UserCredentialsUpdateMsg userCredentialsUpdateMsg = 11;
+  CustomerUpdateMsg customerUpdateMsg = 12;
+  RelationUpdateMsg relationUpdateMsg = 13;
+  WidgetsBundleUpdateMsg widgetsBundleUpdateMsg = 14;
+  WidgetTypeUpdateMsg widgetTypeUpdateMsg = 15;
 }
 
 enum RequestMsgType {
@@ -141,6 +142,10 @@ message RuleChainMetadataUpdateMsg {
   repeated RuleNodeProto nodes = 5;
   repeated NodeConnectionInfoProto connections = 6;
   repeated RuleChainConnectionInfoProto ruleChainConnections = 7;
+}
+
+message RuleChainsSyncUpdateMsg {
+  repeated RuleChainUpdateMsg ruleChainUpdateMsg = 1;
 }
 
 message RuleNodeProto {

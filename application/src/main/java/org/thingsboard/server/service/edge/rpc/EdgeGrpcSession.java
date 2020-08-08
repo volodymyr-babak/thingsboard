@@ -17,6 +17,7 @@ package org.thingsboard.server.service.edge.rpc;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.FutureCallback;
@@ -64,6 +65,7 @@ import org.thingsboard.server.common.data.page.TimePageLink;
 import org.thingsboard.server.common.data.relation.EntityRelation;
 import org.thingsboard.server.common.data.relation.RelationTypeGroup;
 import org.thingsboard.server.common.data.rule.RuleChain;
+import org.thingsboard.server.common.data.rule.RuleChainConnectionInfo;
 import org.thingsboard.server.common.data.rule.RuleChainMetaData;
 import org.thingsboard.server.common.data.security.DeviceCredentials;
 import org.thingsboard.server.common.data.security.DeviceCredentialsType;
@@ -98,6 +100,7 @@ import org.thingsboard.server.gen.edge.ResponseMsg;
 import org.thingsboard.server.gen.edge.RuleChainMetadataRequestMsg;
 import org.thingsboard.server.gen.edge.RuleChainMetadataUpdateMsg;
 import org.thingsboard.server.gen.edge.RuleChainUpdateMsg;
+import org.thingsboard.server.gen.edge.RuleChainsSyncUpdateMsg;
 import org.thingsboard.server.gen.edge.UpdateMsgType;
 import org.thingsboard.server.gen.edge.UplinkMsg;
 import org.thingsboard.server.gen.edge.UplinkResponseMsg;
@@ -515,12 +518,23 @@ public final class EdgeGrpcSession implements Closeable {
             case ADDED:
             case UPDATED:
             case ASSIGNED_TO_EDGE:
-                RuleChain ruleChain = ctx.getRuleChainService().findRuleChainById(edgeEvent.getTenantId(), ruleChainId);
-                if (ruleChain != null) {
-                    RuleChainUpdateMsg ruleChainUpdateMsg =
-                            ctx.getRuleChainUpdateMsgConstructor().constructRuleChainUpdatedMsg(edge.getRootRuleChainId(), msgType, ruleChain);
+                if (ruleChainId.getId() != null) {
+                    RuleChain ruleChain = ctx.getRuleChainService().findRuleChainById(edgeEvent.getTenantId(), ruleChainId);
+                    if (ruleChain != null) {
+                        RuleChainUpdateMsg ruleChainUpdateMsg =
+                                ctx.getRuleChainUpdateMsgConstructor().constructRuleChainUpdatedMsg(edge.getRootRuleChainId(), msgType, ruleChain);
+                        entityUpdateMsg = EntityUpdateMsg.newBuilder()
+                                .setRuleChainUpdateMsg(ruleChainUpdateMsg)
+                                .build();
+                        updateDependentRuleChains(ruleChain.getId());
+                    }
+                } else {
+                    List<RuleChain> ruleChains = mapper.convertValue(edgeEvent.getEntityBody(), new TypeReference<List<RuleChain>>() {
+                    });
+                    RuleChainsSyncUpdateMsg ruleChainsSyncUpdateMsg =
+                            ctx.getRuleChainUpdateMsgConstructor().constructRuleChainsSyncUpdatedMsg(edge.getRootRuleChainId(), msgType, ruleChains);
                     entityUpdateMsg = EntityUpdateMsg.newBuilder()
-                            .setRuleChainUpdateMsg(ruleChainUpdateMsg)
+                            .setRuleChainsSyncUpdateMsg(ruleChainsSyncUpdateMsg)
                             .build();
                 }
                 break;
@@ -536,6 +550,37 @@ public final class EdgeGrpcSession implements Closeable {
                     .setEntityUpdateMsg(entityUpdateMsg)
                     .build());
         }
+    }
+
+    private void updateDependentRuleChains(RuleChainId processingRuleChainId) {
+        ListenableFuture<TimePageData<RuleChain>> future = ctx.getRuleChainService().findRuleChainsByTenantIdAndEdgeId(edge.getTenantId(), edge.getId(), new TimePageLink(Integer.MAX_VALUE));
+        Futures.addCallback(future, new FutureCallback<TimePageData<RuleChain>>() {
+            @Override
+            public void onSuccess(@Nullable TimePageData<RuleChain> pageData) {
+                if (pageData != null && pageData.getData() != null && !pageData.getData().isEmpty()) {
+                    for (RuleChain ruleChain : pageData.getData()) {
+                        if (!ruleChain.getId().equals(processingRuleChainId)) {
+                            List<RuleChainConnectionInfo> connectionInfos = ctx.getRuleChainService().loadRuleChainMetaData(ruleChain.getTenantId(), ruleChain.getId()).getRuleChainConnections();
+                            if (connectionInfos != null && !connectionInfos.isEmpty()) {
+                                for (RuleChainConnectionInfo connectionInfo : connectionInfos) {
+                                    if (connectionInfo.getTargetRuleChainId().equals(processingRuleChainId)) {
+                                        RuleChainMetadataRequestMsg.Builder builder = RuleChainMetadataRequestMsg.newBuilder()
+                                                .setRuleChainIdLSB(ruleChain.getId().getId().getLeastSignificantBits())
+                                                .setRuleChainIdMSB(ruleChain.getId().getId().getMostSignificantBits());
+                                        ctx.getSyncEdgeService().processRuleChainMetadataRequestMsg(edge, builder.build());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                log.error("Exception during updating dependent rule chains on sync!", t);
+            }
+        }, ctx.getDbCallbackExecutor());
     }
 
     private void processRuleChainMetadata(EdgeEvent edgeEvent, UpdateMsgType msgType) {

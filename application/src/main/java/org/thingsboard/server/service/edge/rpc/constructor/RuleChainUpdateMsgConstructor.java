@@ -30,6 +30,7 @@ import org.thingsboard.server.gen.edge.NodeConnectionInfoProto;
 import org.thingsboard.server.gen.edge.RuleChainConnectionInfoProto;
 import org.thingsboard.server.gen.edge.RuleChainMetadataUpdateMsg;
 import org.thingsboard.server.gen.edge.RuleChainUpdateMsg;
+import org.thingsboard.server.gen.edge.RuleChainsSyncUpdateMsg;
 import org.thingsboard.server.gen.edge.RuleNodeProto;
 import org.thingsboard.server.gen.edge.UpdateMsgType;
 
@@ -54,6 +55,18 @@ public class RuleChainUpdateMsgConstructor {
         if (ruleChain.getFirstRuleNodeId() != null) {
             builder.setFirstRuleNodeIdMSB(ruleChain.getFirstRuleNodeId().getId().getMostSignificantBits())
                     .setFirstRuleNodeIdLSB(ruleChain.getFirstRuleNodeId().getId().getLeastSignificantBits());
+        }
+        return builder.build();
+    }
+
+    public RuleChainsSyncUpdateMsg constructRuleChainsSyncUpdatedMsg(RuleChainId edgeRootRuleChainId, UpdateMsgType msgType, List<RuleChain> ruleChains) {
+        List<RuleChainUpdateMsg> ruleChainUpdateMsgs = new ArrayList<>();
+        for (RuleChain ruleChain: ruleChains) {
+            ruleChainUpdateMsgs.add(constructRuleChainUpdatedMsg(edgeRootRuleChainId, msgType, ruleChain));
+        }
+        RuleChainsSyncUpdateMsg.Builder builder = RuleChainsSyncUpdateMsg.newBuilder();
+        if (!ruleChainUpdateMsgs.isEmpty()) {
+            builder.addAllRuleChainUpdateMsg(ruleChainUpdateMsgs);
         }
         return builder.build();
     }
