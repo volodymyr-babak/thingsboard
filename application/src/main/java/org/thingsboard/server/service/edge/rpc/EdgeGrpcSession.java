@@ -518,7 +518,7 @@ public final class EdgeGrpcSession implements Closeable {
             case ADDED:
             case UPDATED:
             case ASSIGNED_TO_EDGE:
-                if (ruleChainId.getId() != null) {
+                if (edgeEvent.getEntityId() != null) {
                     RuleChain ruleChain = ctx.getRuleChainService().findRuleChainById(edgeEvent.getTenantId(), ruleChainId);
                     if (ruleChain != null) {
                         RuleChainUpdateMsg ruleChainUpdateMsg =
@@ -528,14 +528,16 @@ public final class EdgeGrpcSession implements Closeable {
                                 .build();
                         updateDependentRuleChains(ruleChain.getId());
                     }
-                } else {
+                } else if (edgeEvent.getEntityBody() != null) {
                     List<RuleChain> ruleChains = mapper.convertValue(edgeEvent.getEntityBody(), new TypeReference<List<RuleChain>>() {
                     });
-                    RuleChainsSyncUpdateMsg ruleChainsSyncUpdateMsg =
-                            ctx.getRuleChainUpdateMsgConstructor().constructRuleChainsSyncUpdatedMsg(edge.getRootRuleChainId(), msgType, ruleChains);
-                    entityUpdateMsg = EntityUpdateMsg.newBuilder()
-                            .setRuleChainsSyncUpdateMsg(ruleChainsSyncUpdateMsg)
-                            .build();
+                    if (!ruleChains.isEmpty()) {
+                        RuleChainsSyncUpdateMsg ruleChainsSyncUpdateMsg =
+                                ctx.getRuleChainUpdateMsgConstructor().constructRuleChainsSyncUpdatedMsg(edge.getRootRuleChainId(), msgType, ruleChains);
+                        entityUpdateMsg = EntityUpdateMsg.newBuilder()
+                                .setRuleChainsSyncUpdateMsg(ruleChainsSyncUpdateMsg)
+                                .build();
+                    }
                 }
                 break;
             case DELETED:
