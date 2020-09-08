@@ -43,14 +43,11 @@ import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.data.page.TextPageData;
 import org.thingsboard.server.common.data.page.TextPageLink;
 import org.thingsboard.server.common.data.plugin.ComponentType;
-import org.thingsboard.server.common.data.relation.EntityRelation;
-import org.thingsboard.server.common.data.relation.RelationTypeGroup;
 import org.thingsboard.server.common.data.rule.RuleChainType;
 import org.thingsboard.server.common.msg.TbMsg;
 import org.thingsboard.server.common.msg.session.SessionMsgType;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +86,7 @@ public class TbMsgPushToEdgeNode implements TbNode {
             return;
         }
         if (isSupportedOriginator(msg.getOriginator().getEntityType())) {
-            if (isSupportedMsgType(msg.getType())) {
+            if (isSupportedMsgType(msg.getType()) || isRpcRequestMsg(msg)) {
                 ListenableFuture<List<EdgeId>> getEdgeIdsFuture = getEdgeIdsByOriginatorId(ctx, ctx.getTenantId(), msg.getOriginator());
                 Futures.addCallback(getEdgeIdsFuture, new FutureCallback<List<EdgeId>>() {
                     @Override
@@ -149,7 +146,7 @@ public class TbMsgPushToEdgeNode implements TbNode {
             if (edgeEventTypeByEntityType == null) {
                 return null;
             }
-            ActionType actionType = getActionTypeByMsgType(msg.getType());
+            ActionType actionType = isRpcRequestMsg(msg) ? ActionType.RPC_CALL : getActionTypeByMsgType(msg.getType());
             JsonNode entityBody = getEntityBody(actionType, msg.getData(), msg.getMetaData().getData());
             return buildEdgeEvent(ctx.getTenantId(), actionType, msg.getOriginator().getId(), edgeEventTypeByEntityType, entityBody);
         }
@@ -182,6 +179,10 @@ public class TbMsgPushToEdgeNode implements TbNode {
                 entityBody.put("data", dataJson);
                 entityBody.put("ts", metadata.get("ts"));
                 break;
+            case RPC_CALL:
+                entityBody.put("data", dataJson);
+                entityBody.put("metadata", metadata);
+                break;
         }
         return json.valueToTree(entityBody);
     }
@@ -199,6 +200,9 @@ public class TbMsgPushToEdgeNode implements TbNode {
         } else if (SessionMsgType.POST_ATTRIBUTES_REQUEST.name().equals(msgType)
                 || DataConstants.ATTRIBUTES_UPDATED.equals(msgType)) {
             actionType = ActionType.ATTRIBUTES_UPDATED;
+        } else if (DataConstants.RPC_CALL_FROM_SERVER_TO_DEVICE.equals(msgType)
+                || DataConstants.RPC_CALL_FROM_EDGE_TO_DEVICE.equals(msgType)) {
+            actionType = ActionType.RPC_CALL;
         } else {
             actionType = ActionType.ATTRIBUTES_DELETED;
         }
@@ -224,7 +228,15 @@ public class TbMsgPushToEdgeNode implements TbNode {
                 || SessionMsgType.POST_ATTRIBUTES_REQUEST.name().equals(msgType)
                 || DataConstants.ATTRIBUTES_UPDATED.equals(msgType)
                 || DataConstants.ATTRIBUTES_DELETED.equals(msgType)
-                || DataConstants.ALARM.equals(msgType);
+                || DataConstants.ALARM.equals(msgType)
+                || DataConstants.RPC_CALL_FROM_SERVER_TO_DEVICE.equals(msgType)
+                || DataConstants.RPC_CALL_FROM_EDGE_TO_DEVICE.equals(msgType);
+    }
+
+    private boolean isRpcRequestMsg(TbMsg msg) {
+        return msg.getOriginator().getEntityType().equals(EntityType.DEVICE)
+                && msg.getData().contains("method")
+                && msg.getData().contains("params");
     }
 
     private ListenableFuture<List<EdgeId>> getEdgeIdsByOriginatorId(TbContext ctx, TenantId tenantId, EntityId originatorId) {

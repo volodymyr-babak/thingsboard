@@ -86,6 +86,8 @@ enum UpdateMsgType {
   ALARM_ACK_RPC_MESSAGE = 3;
   ALARM_CLEAR_RPC_MESSAGE = 4;
   DEVICE_CONFLICT_RPC_MESSAGE = 5;
+  RPC_REQUEST_MSG = 6;
+  RPC_RESPONSE_MSG = 7;
 }
 
 message EntityDataProto {
@@ -322,6 +324,24 @@ message DeviceCredentialsRequestMsg {
   int64 deviceIdLSB = 2;
 }
 
+message RpcRequestMsg {
+  int64 deviceIdMSB = 1;
+  int64 deviceIdLBS = 2;
+  string method = 3;
+  string params = 4;
+  int32 requestId = 5;
+  string requestUUID = 6;
+  int64 expirationTime = 7;
+  bool oneway = 8;
+  string originServiceId = 9;
+}
+
+message RpcResponseMsg {
+  string requestUUID = 1;
+  string originServiceId = 2;
+  string response = 3;
+}
+
 enum EdgeEntityType {
   DEVICE = 0;
   ASSET = 1;
@@ -343,6 +363,8 @@ message UplinkMsg {
   repeated RelationRequestMsg relationRequestMsg = 9;
   repeated UserCredentialsRequestMsg userCredentialsRequestMsg = 10;
   repeated DeviceCredentialsRequestMsg deviceCredentialsRequestMsg = 11;
+  repeated RpcResponseMsg rpcResponseMsg = 12;
+  repeated RpcRequestMsg rpcRequestMsg = 13;
 }
 
 message UplinkResponseMsg {
@@ -374,6 +396,7 @@ message DownlinkMsg {
   repeated WidgetsBundleUpdateMsg widgetsBundleUpdateMsg = 16;
   repeated WidgetTypeUpdateMsg widgetTypeUpdateMsg = 17;
   repeated AdminSettingsUpdateMsg adminSettingsUpdateMsg = 18;
-
+  repeated RpcRequestMsg rpcRequestMsg = 19;
+  repeated RpcResponseMsg rpcResponseMsg = 20;
 }
 

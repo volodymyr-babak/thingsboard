@@ -17,6 +17,7 @@ package org.thingsboard.server.service.edge.rpc;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.FutureCallback;
@@ -81,6 +82,7 @@ import org.thingsboard.server.common.data.security.UserCredentials;
 import org.thingsboard.server.common.data.widget.WidgetType;
 import org.thingsboard.server.common.data.widget.WidgetsBundle;
 import org.thingsboard.server.common.msg.TbMsg;
+import org.thingsboard.server.common.msg.TbMsgDataType;
 import org.thingsboard.server.common.msg.TbMsgMetaData;
 import org.thingsboard.server.common.msg.queue.ServiceType;
 import org.thingsboard.server.common.msg.queue.TopicPartitionInfo;
@@ -109,6 +111,8 @@ import org.thingsboard.server.gen.edge.RelationUpdateMsg;
 import org.thingsboard.server.gen.edge.RequestMsg;
 import org.thingsboard.server.gen.edge.RequestMsgType;
 import org.thingsboard.server.gen.edge.ResponseMsg;
+import org.thingsboard.server.gen.edge.RpcRequestMsg;
+import org.thingsboard.server.gen.edge.RpcResponseMsg;
 import org.thingsboard.server.gen.edge.RuleChainMetadataRequestMsg;
 import org.thingsboard.server.gen.edge.RuleChainMetadataUpdateMsg;
 import org.thingsboard.server.gen.edge.RuleChainUpdateMsg;
@@ -125,6 +129,7 @@ import org.thingsboard.server.queue.TbQueueMsgMetadata;
 import org.thingsboard.server.queue.TbQueueProducer;
 import org.thingsboard.server.queue.common.TbProtoQueueMsg;
 import org.thingsboard.server.service.edge.EdgeContextComponent;
+import org.thingsboard.server.service.rpc.FromDeviceRpcResponse;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -360,6 +365,9 @@ public final class EdgeGrpcSession implements Closeable {
                     case ATTRIBUTES_DELETED:
                     case TIMESERIES_UPDATED:
                         downlinkMsg = processTelemetryMessage(edgeEvent);
+                        break;
+                    case RPC_CALL:
+                        downlinkMsg = processRpcCallMsg(edgeEvent);
                         break;
                 }
                 if (downlinkMsg != null) {
@@ -796,6 +804,11 @@ public final class EdgeGrpcSession implements Closeable {
                 .build();
     }
 
+    private DownlinkMsg processRpcCallMsg(EdgeEvent edgeEvent) {
+        log.trace("Executiong processRpcCall, edgeEvent [{}]", edgeEvent);
+        return ctx.getRpcCallManager().processRpcCallMsg(edgeEvent.getEntityId(), edgeEvent.getEntityBody());
+    }
+
     private UpdateMsgType getResponseMsgType(ActionType actionType) {
         switch (actionType) {
             case UPDATED:
@@ -893,6 +906,16 @@ public final class EdgeGrpcSession implements Closeable {
             if (uplinkMsg.getDeviceCredentialsRequestMsgList() != null && !uplinkMsg.getDeviceCredentialsRequestMsgList().isEmpty()) {
                 for (DeviceCredentialsRequestMsg deviceCredentialsRequestMsg : uplinkMsg.getDeviceCredentialsRequestMsgList()) {
                     result.add(ctx.getSyncEdgeService().processDeviceCredentialsRequestMsg(edge, deviceCredentialsRequestMsg));
+                }
+            }
+            if (uplinkMsg.getRpcResponseMsgList() != null && !uplinkMsg.getRpcResponseMsgList().isEmpty()) {
+                for (RpcResponseMsg rpcResponseMsg: uplinkMsg.getRpcResponseMsgList()) {
+                    result.add(ctx.getRpcCallManager().processRpcResponseMsg(rpcResponseMsg));
+                }
+            }
+            if (uplinkMsg.getRpcRequestMsgList() != null && !uplinkMsg.getRpcRequestMsgList().isEmpty()) {
+                for (RpcRequestMsg rpcRequestMsg: uplinkMsg.getRpcRequestMsgList()) {
+                    result.add(ctx.getRpcCallManager().processRpcRequestMsg(edge.getTenantId(), rpcRequestMsg));
                 }
             }
         } catch (Exception e) {

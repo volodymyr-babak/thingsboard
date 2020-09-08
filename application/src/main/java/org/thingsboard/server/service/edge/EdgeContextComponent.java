@@ -38,23 +38,14 @@ import org.thingsboard.server.dao.widget.WidgetsBundleService;
 import org.thingsboard.server.queue.discovery.PartitionService;
 import org.thingsboard.server.queue.provider.TbQueueProducerProvider;
 import org.thingsboard.server.queue.util.TbCoreComponent;
+import org.thingsboard.server.service.edge.rpc.DeviceRpcCallManager;
 import org.thingsboard.server.service.edge.rpc.EdgeEventStorageSettings;
-import org.thingsboard.server.service.edge.rpc.constructor.AdminSettingsUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.AlarmUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.AssetUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.CustomerUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.DashboardUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.DeviceUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.EntityDataMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.EntityViewUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.RelationUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.RuleChainUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.UserUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.WidgetTypeUpdateMsgConstructor;
-import org.thingsboard.server.service.edge.rpc.constructor.WidgetsBundleUpdateMsgConstructor;
+import org.thingsboard.server.service.edge.rpc.constructor.*;
 import org.thingsboard.server.service.edge.rpc.init.SyncEdgeService;
 import org.thingsboard.server.service.executors.DbCallbackExecutorService;
 import org.thingsboard.server.service.queue.TbClusterService;
+import org.thingsboard.server.service.rpc.TbCoreDeviceRpcService;
+import org.thingsboard.server.service.rpc.TbRuleEngineDeviceRpcService;
 import org.thingsboard.server.service.state.DeviceStateService;
 
 @Component
@@ -196,6 +187,10 @@ public class EdgeContextComponent {
     @Lazy
     @Autowired
     private EntityDataMsgConstructor entityDataMsgConstructor;
+
+    @Lazy
+    @Autowired
+    private DeviceRpcCallManager rpcCallManager;
 
     @Lazy
     @Autowired
