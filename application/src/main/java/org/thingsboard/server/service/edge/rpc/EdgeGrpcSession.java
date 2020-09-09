@@ -804,7 +804,7 @@ public final class EdgeGrpcSession implements Closeable {
     }
 
     private DownlinkMsg processRpcCallMsg(EdgeEvent edgeEvent) {
-        log.trace("Executiong processRpcCall, edgeEvent [{}]", edgeEvent);
+        log.trace("Executing processRpcCall, edgeEvent [{}]", edgeEvent);
         return ctx.getRpcCallManager().processRpcCallMsg(edgeEvent.getEntityId(), edgeEvent.getEntityBody());
     }
 

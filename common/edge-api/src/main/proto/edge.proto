@@ -331,7 +331,7 @@ message RpcRequestMsg {
   string params = 4;
   int32 requestId = 5;
   string requestUUID = 6;
-  int64 expirationTime = 7;
+  string expirationTime = 7;
   bool oneway = 8;
   string originServiceId = 9;
 }
@@ -340,6 +340,7 @@ message RpcResponseMsg {
   string requestUUID = 1;
   string originServiceId = 2;
   string response = 3;
+  string error = 4;
 }
 
 enum EdgeEntityType {
