@@ -16,7 +16,6 @@
 package org.thingsboard.server.service.edge.rpc.manager;
 
 import com.datastax.driver.core.utils.UUIDs;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -30,13 +29,12 @@ import org.thingsboard.rule.engine.api.RpcError;
 import org.thingsboard.server.common.data.DataConstants;
 import org.thingsboard.server.common.data.Device;
 import org.thingsboard.server.common.data.id.DeviceId;
-import org.thingsboard.server.common.data.id.EntityId;
 import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.msg.TbMsg;
 import org.thingsboard.server.common.msg.TbMsgDataType;
 import org.thingsboard.server.common.msg.TbMsgMetaData;
 import org.thingsboard.server.dao.device.DeviceService;
-import org.thingsboard.server.gen.edge.DownlinkMsg;
+import org.thingsboard.server.gen.edge.RpcCallMsg;
 import org.thingsboard.server.gen.edge.RpcRequestMsg;
 import org.thingsboard.server.gen.edge.RpcResponseMsg;
 import org.thingsboard.server.queue.TbQueueCallback;
@@ -44,7 +42,6 @@ import org.thingsboard.server.queue.TbQueueMsgMetadata;
 import org.thingsboard.server.service.queue.TbClusterService;
 import org.thingsboard.server.service.rpc.FromDeviceRpcResponse;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -67,105 +64,120 @@ public class DeviceRpcCallManager {
     private DeviceService deviceService;
 
 
-    public DownlinkMsg processRpcCallMsg(UUID entityId, JsonNode entityBody) {
+    public RpcCallMsg processRpcCallMsg(UUID entityId, JsonNode entityBody) {
         try {
             JsonNode data = entityBody.get("data");
             JsonNode metadata = entityBody.get("metadata");
             JsonNode requestUUID = metadata.get("requestUUID");
-            DownlinkMsg.Builder builder = DownlinkMsg.newBuilder();
+            RpcCallMsg.Builder builder = RpcCallMsg.newBuilder();
             if (requestUUID == null || !incomingRequestUUIDs.remove(requestUUID.asText())) {
                 if (requestUUID == null) {
                     String createdRequestUUID = UUIDs.timeBased().toString();
                     ((ObjectNode) metadata).put("requestUUID", createdRequestUUID);
                     fromRuleEngineRequestUUIDs.add(createdRequestUUID);
                 }
-                RpcRequestMsg rpcRequestMsg = constructRpcRequestMsg(new DeviceId(entityId), data, metadata);
-                builder.addAllRpcRequestMsg(Collections.singletonList(rpcRequestMsg));
+                RpcRequestMsg rpcRequestMsg = constructRpcRequestMsg(data);
+                builder.setRequestMsg(rpcRequestMsg);
             } else {
-                RpcResponseMsg rpcResponseMsg = constructRpcResponseMsg(data, metadata);
-                builder.addAllRpcResponseMsg(Collections.singletonList(rpcResponseMsg));
+                RpcResponseMsg rpcResponseMsg = constructRpcResponseMsg(data);
+                builder.setResponseMsg(rpcResponseMsg);
+            }
+            builder.setDeviceIdMSB(entityId.getMostSignificantBits())
+                    .setDeviceIdLBS(entityId.getLeastSignificantBits())
+                    .setRequestUUID(metadata.get("requestUUID").asText())
+                    .setRequestId(metadata.has("requestId") ? metadata.get("requestId").asInt() : random.nextInt())
+                    .setOneway(metadata.has("oneway") ? metadata.get("oneway").asBoolean() : true);
+            if (metadata.has("originServiceId")) {
+                builder.setOriginServiceId(metadata.get("originServiceId").asText());
+            }
+            if (metadata.has("expirationTime")) {
+                builder.setExpirationTime(metadata.get("expirationTime").asText());
             }
             return builder.build();
         } catch (Exception e) {
-            log.warn("Can't send rpc call msg, body [{}]", entityBody, e);
+            log.error("Can't send rpc call msg, body [{}]", entityBody, e);
             return null;
         }
     }
 
-    public ListenableFuture<Void> processRpcResponseMsg(RpcResponseMsg responseMsg) {
-        log.info("process Rpc Response {}", responseMsg);
-        SettableFuture<Void> futureToSet = SettableFuture.create();
-        String originServiceId = responseMsg.getOriginServiceId();
-        UUID requestUUID = UUID.fromString(responseMsg.getRequestUUID());
-        String response = !responseMsg.getResponse().equals("{}") ? responseMsg.getResponse() : null;
-        RpcError error = !StringUtils.isEmpty(responseMsg.getError()) ? RpcError.valueOf(responseMsg.getError()) : null;
-        FromDeviceRpcResponse fromDeviceRpcResponse = new FromDeviceRpcResponse(requestUUID, response, error);
-        if (!fromRuleEngineRequestUUIDs.remove(responseMsg.getRequestUUID())) {
-            log.info("push msg to core");
-            tbClusterService.pushNotificationToCore(originServiceId, fromDeviceRpcResponse, new TbQueueCallback() {
-                @Override
-                public void onSuccess(TbQueueMsgMetadata metadata) {
-                    futureToSet.set(null);
-                }
+    public ListenableFuture<Void> processRpcCallMsg(TenantId tenantId, RpcCallMsg rpcCallMsg) {
+        ListenableFuture<Void> result = null;
+        if (rpcCallMsg.hasRequestMsg()) {
+            result = processRpcRequestMsg(tenantId, rpcCallMsg);
+        }
+        if (rpcCallMsg.hasResponseMsg()) {
+            result = processRpcResponseMsg(tenantId, rpcCallMsg);
+        }
+        return result;
+    }
 
-                @Override
-                public void onFailure(Throwable t) {
-                    log.error("Can't process rpc response msg [{}]", responseMsg, t);
-                    futureToSet.setException(t);
-                }
-            });
+    public ListenableFuture<Void> processRpcResponseMsg(TenantId tenantId, RpcCallMsg rpcCallMsg) {
+        log.info("process Rpc Response {}", rpcCallMsg);
+        SettableFuture<Void> futureToSet = SettableFuture.create();
+        UUID requestUUID = UUID.fromString(rpcCallMsg.getRequestUUID());
+        RpcResponseMsg rpcResponseMsg = rpcCallMsg.getResponseMsg();
+        TbQueueCallback callback = new TbQueueCallback() {
+            @Override
+            public void onSuccess(TbQueueMsgMetadata metadata) {
+                futureToSet.set(null);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                log.error("Can't process rpc response msg [{}]", rpcCallMsg, t);
+                futureToSet.setException(t);
+            }
+        };
+        if (!fromRuleEngineRequestUUIDs.remove(rpcCallMsg.getRequestUUID())) {
+            String response = !rpcResponseMsg.getResponse().equals("{}") ? rpcResponseMsg.getResponse() : null;
+            RpcError error = !StringUtils.isEmpty(rpcResponseMsg.getError()) ? RpcError.valueOf(rpcResponseMsg.getError()) : null;
+            String originServiceId = rpcCallMsg.getOriginServiceId();
+            FromDeviceRpcResponse fromDeviceRpcResponse = new FromDeviceRpcResponse(requestUUID, response, error);
+            tbClusterService.pushNotificationToCore(originServiceId, fromDeviceRpcResponse, callback);
         } else {
-            log.info("push msg to rule engine");
-            futureToSet.set(null);
-            // push msg to rule engine
+            DeviceId deviceId = new DeviceId(new UUID(rpcCallMsg.getDeviceIdMSB(), rpcCallMsg.getDeviceIdLBS()));
+            String data;
+            if (!StringUtils.isEmpty(rpcResponseMsg.getError())) {
+                ObjectNode dataNode = mapper.createObjectNode();
+                dataNode.put("error", rpcResponseMsg.getError());
+                data = dataNode.toString();
+            } else {
+                data = rpcResponseMsg.getResponse();
+            }
+            TbMsg tbMsg = constructTbMsg(tenantId, deviceId, requestUUID.toString(), DataConstants.RPC_RESPONSE_FROM_EDGE, rpcCallMsg, data);
+            tbClusterService.pushMsgToRuleEngine(tenantId, deviceId, tbMsg, callback);
         }
         return futureToSet;
     }
 
-    public ListenableFuture<Void> processRpcRequestMsg(TenantId tenantId, RpcRequestMsg rpcRequestMsg) {
-        log.info("process Rpc Request {}", rpcRequestMsg);
+    public ListenableFuture<Void> processRpcRequestMsg(TenantId tenantId, RpcCallMsg rpcCallMsg) {
         SettableFuture<Void> futureToSet = SettableFuture.create();
-        TbMsgMetaData metaData = new TbMsgMetaData();
-        metaData.putValue("requestUUID", rpcRequestMsg.getRequestUUID());
-        metaData.putValue("originServiceId", rpcRequestMsg.getOriginServiceId());
-        metaData.putValue("expirationTime", rpcRequestMsg.getExpirationTime());
-        metaData.putValue("oneway", Boolean.toString(rpcRequestMsg.getOneway()));
-        DeviceId deviceId = new DeviceId(new UUID(rpcRequestMsg.getDeviceIdMSB(), rpcRequestMsg.getDeviceIdLBS()));
-        Device device = deviceService.findDeviceById(tenantId, deviceId);
-        if (device != null) {
-            metaData.putValue("deviceName", device.getName());
-            metaData.putValue("deviceType", device.getType());
-        }
-        ObjectNode entityNode = mapper.createObjectNode();
-        entityNode.put("method", rpcRequestMsg.getMethod());
-        entityNode.put("params", rpcRequestMsg.getParams());
-        try {
-            TbMsg tbMsg = TbMsg.newMsg(DataConstants.RPC_CALL_FROM_EDGE_TO_DEVICE, deviceId, metaData, TbMsgDataType.JSON, mapper.writeValueAsString(entityNode));
-            incomingRequestUUIDs.add(metaData.getValue("requestUUID"));
-            tbClusterService.pushMsgToRuleEngine(tenantId, deviceId, tbMsg, new TbQueueCallback() {
-                @Override
-                public void onSuccess(TbQueueMsgMetadata metadata) {
+        DeviceId deviceId = new DeviceId(new UUID(rpcCallMsg.getDeviceIdMSB(), rpcCallMsg.getDeviceIdLBS()));
+        String requestUUID = rpcCallMsg.getRequestUUID();
+        RpcRequestMsg rpcRequestMsg = rpcCallMsg.getRequestMsg();
+        ObjectNode dataNode = mapper.createObjectNode();
+        dataNode.put("method", rpcRequestMsg.getMethod());
+        dataNode.put("params", rpcRequestMsg.getParams());
+        String data = dataNode.toString();
+        TbMsg tbMsg = constructTbMsg(tenantId, deviceId, requestUUID, DataConstants.RPC_REQUEST_FROM_EDGE_TO_DEVICE, rpcCallMsg, data);
+        incomingRequestUUIDs.add(requestUUID);
+        tbClusterService.pushMsgToRuleEngine(tenantId, deviceId, tbMsg, new TbQueueCallback() {
+            @Override
+            public void onSuccess(TbQueueMsgMetadata metadata) {
                     futureToSet.set(null);
                 }
 
-                @Override
-                public void onFailure(Throwable t) {
-                    log.error("Can't process rpc request msg [{}]", rpcRequestMsg, t);
-                    futureToSet.setException(t);
-                }
-            });
-        } catch (JsonProcessingException e) {
-            log.error("Error during processing rpc request msg", e);
-            futureToSet.setException(e);
-        }
+            @Override
+            public void onFailure(Throwable t) {
+                log.error("Can't process rpc request msg [{}]", rpcCallMsg, t);
+                futureToSet.setException(t);
+            }
+        });
         return futureToSet;
     }
 
-    private RpcResponseMsg constructRpcResponseMsg(JsonNode data, JsonNode metadata) {
-        log.info("Construct rpc response");
-        RpcResponseMsg.Builder builder = RpcResponseMsg.newBuilder()
-                .setOriginServiceId(metadata.get("originServiceId").asText())
-                .setRequestUUID(metadata.get("requestUUID").asText());
+    private RpcResponseMsg constructRpcResponseMsg(JsonNode data) {
+        RpcResponseMsg.Builder builder = RpcResponseMsg.newBuilder();
         if (data.has("error")) {
             builder.setError(data.get("error").asText());
         } else {
@@ -174,23 +186,25 @@ public class DeviceRpcCallManager {
         return builder.build();
     }
 
-    private RpcRequestMsg constructRpcRequestMsg(EntityId entityId, JsonNode data, JsonNode metadata) {
-        log.info("construct Rpc request");
-        RpcRequestMsg.Builder builder = RpcRequestMsg.newBuilder()
-                .setDeviceIdMSB(entityId.getId().getMostSignificantBits())
-                .setDeviceIdLBS(entityId.getId().getLeastSignificantBits())
+    private RpcRequestMsg constructRpcRequestMsg(JsonNode data) {
+        return RpcRequestMsg.newBuilder()
                 .setMethod(data.get("method").asText())
                 .setParams(data.get("params").asText())
-                .setRequestUUID(metadata.get("requestUUID").asText())
-                .setRequestId(metadata.has("requestId") ? metadata.get("requestId").asInt() : random.nextInt())
-                .setOneway(metadata.has("oneway") ? metadata.get("oneway").asBoolean() : true);
-        if (metadata.has("originServiceId")) {
-            builder.setOriginServiceId(metadata.get("originServiceId").asText());
+                .build();
+    }
+
+    private TbMsg constructTbMsg(TenantId tenantId, DeviceId deviceId, String requestUUID, String type, RpcCallMsg rpcCallMsg, String data) {
+        TbMsgMetaData metaData = new TbMsgMetaData();
+        metaData.putValue("requestUUID", requestUUID);
+        metaData.putValue("originServiceId", rpcCallMsg.getOriginServiceId());
+        metaData.putValue("expirationTime", rpcCallMsg.getExpirationTime());
+        metaData.putValue("oneway", Boolean.toString(rpcCallMsg.getOneway()));
+        Device device = deviceService.findDeviceById(tenantId, deviceId);
+        if (device != null) {
+            metaData.putValue("deviceName", device.getName());
+            metaData.putValue("deviceType", device.getType());
         }
-        if (metadata.has("expirationTime")) {
-            builder.setExpirationTime(metadata.get("expirationTime").asText());
-        }
-        return builder.build();
+        return TbMsg.newMsg(type, deviceId, metaData, TbMsgDataType.JSON, data);
     }
 
 }

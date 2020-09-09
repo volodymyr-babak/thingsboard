@@ -89,8 +89,7 @@ import org.thingsboard.server.gen.edge.RelationUpdateMsg;
 import org.thingsboard.server.gen.edge.RequestMsg;
 import org.thingsboard.server.gen.edge.RequestMsgType;
 import org.thingsboard.server.gen.edge.ResponseMsg;
-import org.thingsboard.server.gen.edge.RpcRequestMsg;
-import org.thingsboard.server.gen.edge.RpcResponseMsg;
+import org.thingsboard.server.gen.edge.RpcCallMsg;
 import org.thingsboard.server.gen.edge.RuleChainMetadataRequestMsg;
 import org.thingsboard.server.gen.edge.RuleChainMetadataUpdateMsg;
 import org.thingsboard.server.gen.edge.RuleChainUpdateMsg;
@@ -805,7 +804,10 @@ public final class EdgeGrpcSession implements Closeable {
 
     private DownlinkMsg processRpcCallMsg(EdgeEvent edgeEvent) {
         log.trace("Executing processRpcCall, edgeEvent [{}]", edgeEvent);
-        return ctx.getRpcCallManager().processRpcCallMsg(edgeEvent.getEntityId(), edgeEvent.getEntityBody());
+        RpcCallMsg rpcCallMsg = ctx.getRpcCallManager().processRpcCallMsg(edgeEvent.getEntityId(), edgeEvent.getEntityBody());
+        return DownlinkMsg.newBuilder()
+                .addAllRpcCallMsg(Collections.singletonList(rpcCallMsg))
+                .build();
     }
 
     private UpdateMsgType getResponseMsgType(ActionType actionType) {
@@ -893,14 +895,9 @@ public final class EdgeGrpcSession implements Closeable {
                     result.add(ctx.getSyncEdgeService().processDeviceCredentialsRequestMsg(edge, deviceCredentialsRequestMsg));
                 }
             }
-            if (uplinkMsg.getRpcResponseMsgList() != null && !uplinkMsg.getRpcResponseMsgList().isEmpty()) {
-                for (RpcResponseMsg rpcResponseMsg: uplinkMsg.getRpcResponseMsgList()) {
-                    result.add(ctx.getRpcCallManager().processRpcResponseMsg(rpcResponseMsg));
-                }
-            }
-            if (uplinkMsg.getRpcRequestMsgList() != null && !uplinkMsg.getRpcRequestMsgList().isEmpty()) {
-                for (RpcRequestMsg rpcRequestMsg: uplinkMsg.getRpcRequestMsgList()) {
-                    result.add(ctx.getRpcCallManager().processRpcRequestMsg(edge.getTenantId(), rpcRequestMsg));
+            if (uplinkMsg.getRpcCallMsgList() != null && !uplinkMsg.getRpcCallMsgList().isEmpty()) {
+                for (RpcCallMsg rpcCallMsg: uplinkMsg.getRpcCallMsgList()) {
+                    result.add(ctx.getRpcCallManager().processRpcCallMsg(edge.getTenantId(), rpcCallMsg));
                 }
             }
         } catch (Exception e) {

@@ -201,7 +201,7 @@ public class TbMsgPushToEdgeNode implements TbNode {
                 || DataConstants.ATTRIBUTES_UPDATED.equals(msgType)) {
             actionType = ActionType.ATTRIBUTES_UPDATED;
         } else if (DataConstants.RPC_CALL_FROM_SERVER_TO_DEVICE.equals(msgType)
-                || DataConstants.RPC_CALL_FROM_EDGE_TO_DEVICE.equals(msgType)) {
+                || DataConstants.RPC_REQUEST_FROM_EDGE_TO_DEVICE.equals(msgType)) {
             actionType = ActionType.RPC_CALL;
         } else {
             actionType = ActionType.ATTRIBUTES_DELETED;
@@ -230,7 +230,7 @@ public class TbMsgPushToEdgeNode implements TbNode {
                 || DataConstants.ATTRIBUTES_DELETED.equals(msgType)
                 || DataConstants.ALARM.equals(msgType)
                 || DataConstants.RPC_CALL_FROM_SERVER_TO_DEVICE.equals(msgType)
-                || DataConstants.RPC_CALL_FROM_EDGE_TO_DEVICE.equals(msgType);
+                || DataConstants.RPC_REQUEST_FROM_EDGE_TO_DEVICE.equals(msgType);
     }
 
     private boolean isRpcRequestMsg(TbMsg msg) {

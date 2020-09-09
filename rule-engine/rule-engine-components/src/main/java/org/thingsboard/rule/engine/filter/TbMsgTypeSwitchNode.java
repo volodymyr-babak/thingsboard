@@ -16,11 +16,15 @@
 package org.thingsboard.rule.engine.filter;
 
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.rule.engine.api.EmptyNodeConfiguration;
+import org.thingsboard.rule.engine.api.RuleNode;
+import org.thingsboard.rule.engine.api.TbContext;
+import org.thingsboard.rule.engine.api.TbNode;
+import org.thingsboard.rule.engine.api.TbNodeConfiguration;
+import org.thingsboard.rule.engine.api.TbNodeException;
 import org.thingsboard.rule.engine.api.util.TbNodeUtils;
-import org.thingsboard.rule.engine.api.*;
 import org.thingsboard.server.common.data.DataConstants;
 import org.thingsboard.server.common.data.plugin.ComponentType;
-import org.thingsboard.server.common.data.rule.RuleChainType;
 import org.thingsboard.server.common.msg.TbMsg;
 import org.thingsboard.server.common.msg.session.SessionMsgType;
 
@@ -31,7 +35,9 @@ import org.thingsboard.server.common.msg.session.SessionMsgType;
         configClazz = EmptyNodeConfiguration.class,
         relationTypes = {"Post attributes", "Post telemetry", "RPC Request from Device", "RPC Request to Device", "Activity Event", "Inactivity Event",
                 "Connect Event", "Disconnect Event", "Entity Created", "Entity Updated", "Entity Deleted", "Entity Assigned",
-                "Entity Unassigned", "Attributes Updated", "Attributes Deleted", "Alarm Acknowledged", "Alarm Cleared", "Other"},
+                "Entity Unassigned", "Attributes Updated", "Attributes Deleted", "Alarm Acknowledged", "Alarm Cleared", "Other",
+                "Rpc Request from Edge to Device", "Rpc Response from Edge", "Rpc Request from Cloud to Device",
+                "Rpc Response from Cloud"},
         nodeDescription = "Route incoming messages by Message Type",
         nodeDetails = "Sends messages with message types <b>\"Post attributes\", \"Post telemetry\", \"RPC Request\"</b> etc. via corresponding chain, otherwise <b>Other</b> chain is used.",
         uiResources = {"static/rulenode/rulenode-core-config.js"},
@@ -83,6 +89,14 @@ public class TbMsgTypeSwitchNode implements TbNode {
             relationType = "Alarm Cleared";
         } else if (msg.getType().equals(DataConstants.RPC_CALL_FROM_SERVER_TO_DEVICE)) {
             relationType = "RPC Request to Device";
+        } else if (msg.getType().equals(DataConstants.RPC_REQUEST_FROM_EDGE_TO_DEVICE)) {
+            relationType = "Rpc Request from Edge to Device";
+        } else if (msg.getType().equals(DataConstants.RPC_RESPONSE_FROM_EDGE)) {
+            relationType = "Rpc Response from Edge";
+        } else if (msg.getType().equals(DataConstants.RPC_REQUEST_FROM_CLOUD_TO_DEVICE)) {
+            relationType = "Rpc Request from Cloud to Device";
+        } else if (msg.getType().equals(DataConstants.RPC_RESPONSE_FROM_CLOUD)) {
+            relationType = "Rpc Response from Cloud";
         } else {
             relationType = "Other";
         }

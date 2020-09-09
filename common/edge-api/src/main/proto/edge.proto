@@ -324,23 +324,26 @@ message DeviceCredentialsRequestMsg {
   int64 deviceIdLSB = 2;
 }
 
-message RpcRequestMsg {
+message RpcCallMsg {
   int64 deviceIdMSB = 1;
   int64 deviceIdLBS = 2;
-  string method = 3;
-  string params = 4;
-  int32 requestId = 5;
-  string requestUUID = 6;
-  string expirationTime = 7;
-  bool oneway = 8;
-  string originServiceId = 9;
+  int32 requestId = 3;
+  string requestUUID = 4;
+  string expirationTime = 5;
+  bool oneway = 6;
+  string originServiceId = 7;
+  RpcRequestMsg requestMsg = 8;
+  RpcResponseMsg responseMsg = 9;
+}
+
+message RpcRequestMsg {
+  string method = 1;
+  string params = 2;
 }
 
 message RpcResponseMsg {
-  string requestUUID = 1;
-  string originServiceId = 2;
-  string response = 3;
-  string error = 4;
+  string response = 1;
+  string error = 2;
 }
 
 enum EdgeEntityType {
@@ -364,8 +367,7 @@ message UplinkMsg {
   repeated RelationRequestMsg relationRequestMsg = 9;
   repeated UserCredentialsRequestMsg userCredentialsRequestMsg = 10;
   repeated DeviceCredentialsRequestMsg deviceCredentialsRequestMsg = 11;
-  repeated RpcResponseMsg rpcResponseMsg = 12;
-  repeated RpcRequestMsg rpcRequestMsg = 13;
+  repeated RpcCallMsg rpcCallMsg = 12;
 }
 
 message UplinkResponseMsg {
@@ -397,7 +399,6 @@ message DownlinkMsg {
   repeated WidgetsBundleUpdateMsg widgetsBundleUpdateMsg = 16;
   repeated WidgetTypeUpdateMsg widgetTypeUpdateMsg = 17;
   repeated AdminSettingsUpdateMsg adminSettingsUpdateMsg = 18;
-  repeated RpcRequestMsg rpcRequestMsg = 19;
-  repeated RpcResponseMsg rpcResponseMsg = 20;
+  repeated RpcCallMsg rpcCallMsg = 19;
 }
 

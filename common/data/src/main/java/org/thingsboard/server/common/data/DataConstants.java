@@ -61,8 +61,11 @@ public class DataConstants {
     public static final String ENTITY_UNASSIGNED_FROM_EDGE = "ENTITY_UNASSIGNED_FROM_EDGE";
 
     public static final String RPC_CALL_FROM_SERVER_TO_DEVICE = "RPC_CALL_FROM_SERVER_TO_DEVICE";
-    public static final String RPC_CALL_FROM_CLOUD_TO_DEVICE = "RPC_CALL_FROM_CLOUD_TO_DEVICE";
-    public static final String RPC_CALL_FROM_EDGE_TO_DEVICE = "RPC_CALL_FROM_EDGE_TO_DEVICE";
+
+    public static final String RPC_REQUEST_FROM_CLOUD_TO_DEVICE = "RPC_REQUEST_FROM_CLOUD_TO_DEVICE";
+    public static final String RPC_REQUEST_FROM_EDGE_TO_DEVICE = "RPC_REQUEST_FROM_EDGE_TO_DEVICE";
+    public static final String RPC_RESPONSE_FROM_CLOUD = "RPC_RESPONSE_FROM_CLOUD";
+    public static final String RPC_RESPONSE_FROM_EDGE = "RPC_RESPONSE_FROM_EDGE";
 
     public static final String DEFAULT_SECRET_KEY = "";
     public static final String SECRET_KEY_FIELD_NAME = "secretKey";
