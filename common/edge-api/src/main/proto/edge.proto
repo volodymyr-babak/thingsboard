@@ -86,8 +86,6 @@ enum UpdateMsgType {
   ALARM_ACK_RPC_MESSAGE = 3;
   ALARM_CLEAR_RPC_MESSAGE = 4;
   DEVICE_CONFLICT_RPC_MESSAGE = 5;
-  RPC_REQUEST_MSG = 6;
-  RPC_RESPONSE_MSG = 7;
 }
 
 message EntityDataProto {
