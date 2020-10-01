@@ -142,10 +142,10 @@ public class TbMsgPushToEdgeNode implements TbNode {
             return buildEdgeEvent(ctx.getTenantId(), ActionType.ADDED, getUUIDFromMsgData(msg), EdgeEventType.ALARM, null);
         } else {
             EdgeEventType edgeEventTypeByEntityType = EdgeUtils.getEdgeEventTypeByEntityType(msg.getOriginator().getEntityType());
-            if (edgeEventTypeByEntityType == null) {
+            ActionType actionType = getActionTypeByMsgType(msg.getType());
+            if (edgeEventTypeByEntityType == null || actionType == null) {
                 return null;
             }
-            ActionType actionType = getActionTypeByMsgType(msg.getType());
             JsonNode entityBody = getEntityBody(actionType, msg.getData(), msg.getMetaData().getData());
             return buildEdgeEvent(ctx.getTenantId(), actionType, msg.getOriginator().getId(), edgeEventTypeByEntityType, entityBody);
         }
@@ -168,11 +168,7 @@ public class TbMsgPushToEdgeNode implements TbNode {
             case ATTRIBUTES_UPDATED:
                 entityBody.put("kv", dataJson);
                 entityBody.put("scope", metadata.get("scope"));
-                break;
-            case ATTRIBUTES_DELETED:
-                List<String> keys = json.treeToValue(dataJson.get("attributes"), List.class);
-                entityBody.put("keys", keys);
-                entityBody.put("scope", metadata.get("scope"));
+                entityBody.put("isPostAttributes", true);
                 break;
             case TIMESERIES_UPDATED:
                 entityBody.put("data", dataJson);
@@ -189,16 +185,14 @@ public class TbMsgPushToEdgeNode implements TbNode {
     }
 
     private ActionType getActionTypeByMsgType(String msgType) {
-        ActionType actionType;
-        if (SessionMsgType.POST_TELEMETRY_REQUEST.name().equals(msgType)) {
-            actionType = ActionType.TIMESERIES_UPDATED;
-        } else if (SessionMsgType.POST_ATTRIBUTES_REQUEST.name().equals(msgType)
-                || DataConstants.ATTRIBUTES_UPDATED.equals(msgType)) {
-            actionType = ActionType.ATTRIBUTES_UPDATED;
-        } else {
-            actionType = ActionType.ATTRIBUTES_DELETED;
+        switch (SessionMsgType.valueOf(msgType)) {
+            case POST_TELEMETRY_REQUEST:
+                return ActionType.TIMESERIES_UPDATED;
+            case POST_ATTRIBUTES_REQUEST:
+                return ActionType.ATTRIBUTES_UPDATED;
+            default:
+                return null;
         }
-        return actionType;
     }
 
     private boolean isSupportedOriginator(EntityType entityType) {
@@ -218,8 +212,6 @@ public class TbMsgPushToEdgeNode implements TbNode {
     private boolean isSupportedMsgType(String msgType) {
         return SessionMsgType.POST_TELEMETRY_REQUEST.name().equals(msgType)
                 || SessionMsgType.POST_ATTRIBUTES_REQUEST.name().equals(msgType)
-                || DataConstants.ATTRIBUTES_UPDATED.equals(msgType)
-                || DataConstants.ATTRIBUTES_DELETED.equals(msgType)
                 || DataConstants.ALARM.equals(msgType);
     }
 
