@@ -274,23 +274,26 @@ public class DefaultEdgeNotificationService implements EdgeNotificationService {
         }
     }
 
-    private void processEntity(TenantId tenantId, TransportProtos.EdgeNotificationMsgProto edgeNotificationMsg) {
+    private void processEntity(TenantId tenantId, TransportProtos.EdgeNotificationMsgProto edgeNotificationMsg) throws JsonProcessingException {
         ActionType actionType = ActionType.valueOf(edgeNotificationMsg.getAction());
         EdgeEventType type = EdgeEventType.valueOf(edgeNotificationMsg.getType());
         EntityId entityId = EntityIdFactory.getByEdgeEventTypeAndUuid(type,
                 new UUID(edgeNotificationMsg.getEntityIdMSB(), edgeNotificationMsg.getEntityIdLSB()));
         ListenableFuture<List<EdgeId>> edgeIdsFuture;
+        JsonNode body = mapper.readTree(edgeNotificationMsg.getBody());
         switch (actionType) {
             case ADDED: // used only for USER entity
             case UPDATED:
             case CREDENTIALS_UPDATED:
+            case ATTRIBUTES_UPDATED:
+            case ATTRIBUTES_DELETED:
                 edgeIdsFuture = edgeService.findRelatedEdgeIdsByEntityId(tenantId, entityId);
                 Futures.addCallback(edgeIdsFuture, new FutureCallback<List<EdgeId>>() {
                     @Override
                     public void onSuccess(@Nullable List<EdgeId> edgeIds) {
                         if (edgeIds != null && !edgeIds.isEmpty()) {
                             for (EdgeId edgeId : edgeIds) {
-                                saveEdgeEvent(tenantId, edgeId, type, actionType, entityId, null);
+                                saveEdgeEvent(tenantId, edgeId, type, actionType, entityId, body);
                             }
                         }
                     }

@@ -361,6 +361,7 @@ public class TelemetryController extends BaseController {
                 Futures.addCallback(future, new FutureCallback<List<Void>>() {
                     @Override
                     public void onSuccess(@Nullable List<Void> tmp) {
+                        sendNotificationMsgToEdgeService(tenantId, entityId, mapper.valueToTree(keys), scope, ActionType.ATTRIBUTES_DELETED);
                         logAttributesDeleted(user, entityId, scope, keys, null);
                         if (entityIdSrc.getEntityType().equals(EntityType.DEVICE)) {
                             DeviceId deviceId = new DeviceId(entityId.getId());
@@ -398,6 +399,7 @@ public class TelemetryController extends BaseController {
                 tsSubService.saveAndNotify(tenantId, entityId, scope, attributes, new FutureCallback<Void>() {
                     @Override
                     public void onSuccess(@Nullable Void tmp) {
+                        sendNotificationMsgToEdgeService(tenantId, entityId, json, scope, ActionType.ATTRIBUTES_UPDATED);
                         logAttributesUpdated(user, entityId, scope, attributes, null);
                         result.setResult(new ResponseEntity(HttpStatus.OK));
                     }

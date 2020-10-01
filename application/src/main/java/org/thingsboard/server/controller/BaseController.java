@@ -16,6 +16,7 @@
 package org.thingsboard.server.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -114,7 +115,9 @@ import org.thingsboard.server.service.telemetry.TelemetrySubscriptionService;
 
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -783,6 +786,30 @@ public abstract class BaseController {
             }
         } catch (Exception e) {
             log.warn("Failed to push relation to core: {}", relation, e);
+        }
+    }
+
+    protected void sendNotificationMsgToEdgeService(TenantId tenantId, EntityId entityId, JsonNode data, String scope, ActionType action) {
+        if (!edgesSupportEnabled) {
+            return;
+        }
+        try {
+            EdgeEventType type = EdgeUtils.getEdgeEventTypeByEntityType(entityId.getEntityType());
+            if (type != null) {
+                Map<String, Object> entityBody = new HashMap<>();
+                entityBody.put("scope", scope);
+                switch (action) {
+                    case ATTRIBUTES_UPDATED:
+                        entityBody.put("kv", data);
+                        break;
+                    case ATTRIBUTES_DELETED:
+                        entityBody.put("keys", data);
+                        break;
+                }
+                sendNotificationMsgToEdgeService(tenantId, null, entityId, json.writeValueAsString(entityBody), type, action);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to push attributes msg to core", e);
         }
     }
 
