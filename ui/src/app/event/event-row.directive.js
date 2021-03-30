@@ -25,8 +25,7 @@ import eventRowDebugRuleNodeTemplate from './event-row-debug-rulenode.tpl.html';
 /* eslint-enable import/no-unresolved, import/default */
 
 /*@ngInject*/
-export default function EventRowDirective($compile, $templateCache, $mdDialog, $document, $translate,
-                                          types, utils) {
+export default function EventRowDirective($compile, $templateCache, $mdDialog, $document, $translate, types, utils) {
 
     var linker = function (scope, element, attrs) {
 
@@ -92,6 +91,14 @@ export default function EventRowDirective($compile, $templateCache, $mdDialog, $
                     onShowingCallback.onShowing(scope, element);
                 }
             });
+        }
+
+        scope.checkTooltip = function($event) {
+            var el = $event.target;
+            var $el = angular.element(el);
+            if(el.offsetWidth < el.scrollWidth && !$el.attr('title')){
+                $el.attr('title', $el.text());
+            }
         }
 
         $compile(element.contents())(scope);
