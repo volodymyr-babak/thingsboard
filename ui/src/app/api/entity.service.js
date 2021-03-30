@@ -859,6 +859,10 @@ function EntityService($http, $q, $filter, $translate, $log, types, utils, userS
 
     function getAliasFilterTypesByEntityTypes(entityTypes) {
         var allAliasFilterTypes = types.aliasFilterType;
+        if (!userService.isEdgesSupportEnabled()) {
+            let edgeAliasFilterTypes = [types.aliasFilterType.edgeType.value, types.aliasFilterType.edgeSearchQuery.value];
+            allAliasFilterTypes = filterAliasFilterTypes(allAliasFilterTypes, edgeAliasFilterTypes);
+        }
         if (!entityTypes || !entityTypes.length) {
             return allAliasFilterTypes;
         }
@@ -867,6 +871,16 @@ function EntityService($http, $q, $filter, $translate, $log, types, utils, userS
             var aliasFilterType = allAliasFilterTypes[type];
             if (filterAliasFilterTypeByEntityTypes(aliasFilterType.value, entityTypes)) {
                 result[type] = aliasFilterType;
+            }
+        }
+        return result;
+    }
+
+    function filterAliasFilterTypes(types, excludedTypes) {
+        var result = {};
+        for (let type in types) {
+            if (excludedTypes.indexOf(type) === -1) {
+                result[type] = types[type];
             }
         }
         return result;
@@ -883,7 +897,9 @@ function EntityService($http, $q, $filter, $translate, $log, types, utils, userS
                 entityTypes.device = types.entityType.device;
                 entityTypes.asset = types.entityType.asset;
                 entityTypes.entityView = types.entityType.entityView;
-                entityTypes.edge = types.entityType.edge;
+                if (userService.isEdgesSupportEnabled()) {
+                    entityTypes.edge = types.entityType.edge;
+                }
                 entityTypes.tenant = types.entityType.tenant;
                 entityTypes.customer = types.entityType.customer;
                 entityTypes.dashboard = types.entityType.dashboard;
@@ -896,7 +912,9 @@ function EntityService($http, $q, $filter, $translate, $log, types, utils, userS
                 entityTypes.device = types.entityType.device;
                 entityTypes.asset = types.entityType.asset;
                 entityTypes.entityView = types.entityType.entityView;
-                entityTypes.edge = types.entityType.edge;
+                if (userService.isEdgesSupportEnabled()) {
+                    entityTypes.edge = types.entityType.edge;
+                }
                 entityTypes.customer = types.entityType.customer;
                 entityTypes.dashboard = types.entityType.dashboard;
                 if (useAliasEntityTypes) {
