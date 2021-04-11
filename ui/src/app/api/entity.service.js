@@ -44,7 +44,7 @@ function EntityService($http, $q, $filter, $translate, $log, types, utils, userS
         moveEntity: moveEntity,
         copyEntity: copyEntity,
         getAssignedToEdgeEntitiesByType: getAssignedToEdgeEntitiesByType,
-        getEdgeEventContentByEntityType: getEdgeEventContentByEntityType
+        getEdgeEventContent: getEdgeEventContent
     };
 
     return service;
@@ -1725,7 +1725,7 @@ function EntityService($http, $q, $filter, $translate, $log, types, utils, userS
         return promise;
     }
 
-    function getEdgeEventContentByEntityType(entity) {
+    function getEdgeEventContent(entity) {
         var deferred = $q.defer();
         var promise = getEdgeEventContentPromise(entity);
         if (promise) {

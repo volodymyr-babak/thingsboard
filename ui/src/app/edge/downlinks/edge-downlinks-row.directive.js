@@ -37,7 +37,7 @@ export default function EdgeDownlinksRowDirective($compile, $templateCache, $mdD
             var onShowingCallback = {
                 onShowing: function(){}
             }
-            var content = entityService.getEdgeEventContentByEntityType(scope.downlink).then(
+            var content = entityService.getEdgeEventContent(scope.downlink).then(
                 function success(content) {
                     showDialog();
                     return angular.toJson(content);
