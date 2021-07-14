@@ -60,7 +60,7 @@ export default angular.module('thingsboard.api.widget', ['oc.lazyLoad', thingsbo
     .name;
 
 /*@ngInject*/
-function WidgetService($rootScope, $http, $q, $filter, $ocLazyLoad, $window, $translate, types, utils) {
+function WidgetService($rootScope, $http, $q, $filter, $ocLazyLoad, $window, $translate, types, utils, userService) {
 
     $window.$ = $;
     $window.jQuery = $;
@@ -315,7 +315,7 @@ function WidgetService($rootScope, $http, $q, $filter, $ocLazyLoad, $window, $tr
         if (!allWidgetsBundles) {
             var url = '/api/widgetsBundles';
             $http.get(url, config).then(function success(response) {
-                allWidgetsBundles = response.data;
+                allWidgetsBundles = filterWidgetsBundles(response.data);
                 systemWidgetsBundles = [];
                 tenantWidgetsBundles = [];
                 allWidgetsBundles = $filter('orderBy')(allWidgetsBundles, ['+title', '-createdTime']);
@@ -828,6 +828,10 @@ function WidgetService($rootScope, $http, $q, $filter, $ocLazyLoad, $window, $tr
         }
 
         return deferred.promise;
+    }
+
+    function filterWidgetsBundles(widgetsBundles) {
+        return widgetsBundles.filter(widgetsBundle => !userService.isEdgesSupportEnabled() ? widgetsBundle.alias !== 'edge_widgets' : widgetsBundle);
     }
 
 }
