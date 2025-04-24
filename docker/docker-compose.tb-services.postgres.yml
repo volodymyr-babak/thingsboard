@@ -14,14 +14,16 @@
 # limitations under the License.
 #
 
-version: '3.0'
-
 services:
-  postgres:
-    volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
-
-volumes:
-  postgres-db-volume:
-    external:
-      name: ${POSTGRES_DATA_VOLUME}
+  tb-core1:
+    env_file:
+      - tb-node.postgres.env
+  tb-core2:
+    env_file:
+      - tb-node.postgres.env
+  tb-rule-engine1:
+    env_file:
+      - tb-node.postgres.env
+  tb-rule-engine2:
+    env_file:
+      - tb-node.postgres.env

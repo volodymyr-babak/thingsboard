@@ -15,55 +15,26 @@
 # limitations under the License.
 #
 
-while [[ $# -gt 0 ]]
-do
-key="$1"
-
-case $key in
-    --loadDemo)
-    LOAD_DEMO=true
-    shift # past argument
-    ;;
-    *)
-            # unknown option
-    ;;
-esac
-shift # past argument or value
-done
-
-if [ "$LOAD_DEMO" == "true" ]; then
-    loadDemo=true
-else
-    loadDemo=false
-fi
-
 set -e
 
 source compose-utils.sh
 
 COMPOSE_VERSION=$(composeVersion) || exit $?
 
-ADDITIONAL_COMPOSE_QUEUE_ARGS=$(additionalComposeQueueArgs .tb-services) || exit $?
-
-ADDITIONAL_COMPOSE_ARGS=$(additionalComposeArgs .tb-services) || exit $?
-
-ADDITIONAL_CACHE_ARGS=$(additionalComposeCacheArgs .tb-services) || exit $?
+ADDITIONAL_COMPOSE_EDQS_ARGS=$(additionalComposeEdqsArgs) || exit $?
 
 COMPOSE_ARGS="\
-      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} ${ADDITIONAL_COMPOSE_ARGS} ${ADDITIONAL_COMPOSE_QUEUE_ARGS} \
-      run --no-deps --rm -e INSTALL_TB=true -e LOAD_DEMO=${loadDemo} \
-      tb-core1"
+      ${ADDITIONAL_COMPOSE_EDQS_ARGS} \
+      down -v"
 
 case $COMPOSE_VERSION in
     V2)
         docker compose $COMPOSE_ARGS
     ;;
     V1)
-        docker-compose $COMPOSE_ARGS
+        docker-compose --compatibility $COMPOSE_ARGS
     ;;
     *)
         # unknown option
     ;;
 esac
-
-

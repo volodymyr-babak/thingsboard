@@ -32,6 +32,12 @@ To be able to change user, **chown** command is used, which requires sudo permis
 $ ./docker-create-log-folders.sh
 `
 
+Start Third Party services:
+
+`
+$ ./docker-start-third-party.sh
+`
+
 Execute the following command to run installation:
 
 `
@@ -44,10 +50,16 @@ Where:
 
 ## Running
 
+Execute the following command to start EDQS:
+
+`
+$ ./docker-start-edqs.sh
+`
+
 Execute the following command to start services:
 
 `
-$ ./docker-start-services.sh
+$ ./docker-start-tb-services.sh
 `
 
 After a while when all services will be successfully started you can open `http://{your-host-ip}` in you browser (for ex. `http://localhost`).
@@ -76,13 +88,13 @@ See [docker-compose logs](https://docs.docker.com/compose/reference/logs/) comma
 Execute the following command to stop services:
 
 `
-$ ./docker-stop-services.sh
+$ ./docker-stop-tb-services.sh
 `
 
 Execute the following command to stop and completely remove deployed docker containers:
 
 `
-$ ./docker-remove-services.sh
+$ ./docker-remove-tb-services.sh
 `
 
 Execute the following command to update particular or all services (pull newer docker image and rebuild container):
@@ -100,9 +112,9 @@ Where:
 In case when database upgrade is needed, execute the following commands:
 
 ```
-$ ./docker-stop-services.sh
+$ ./docker-stop-tb-services.sh
 $ ./docker-upgrade-tb.sh --fromVersion=[FROM_VERSION]
-$ ./docker-start-services.sh
+$ ./docker-start-tb-services.sh
 ```
 
 Where:

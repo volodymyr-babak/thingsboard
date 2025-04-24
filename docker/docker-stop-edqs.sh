@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright © 2016-2025 The Thingsboard Authors
 #
@@ -14,14 +15,26 @@
 # limitations under the License.
 #
 
-version: '3.0'
+set -e
 
-services:
-  cassandra:
-    volumes:
-      - cassandra-volume:/var/lib/cassandra
+source compose-utils.sh
 
-volumes:
-  cassandra-volume:
-    external:
-      name: ${CASSANDRA_DATA_VOLUME}
+COMPOSE_VERSION=$(composeVersion) || exit $?
+
+ADDITIONAL_COMPOSE_EDQS_ARGS=$(additionalComposeEdqsArgs) || exit $?
+
+COMPOSE_ARGS="\
+      ${ADDITIONAL_COMPOSE_EDQS_ARGS} \
+      stop"
+
+case $COMPOSE_VERSION in
+    V2)
+        docker compose $COMPOSE_ARGS
+    ;;
+    V1)
+        docker-compose --compatibility $COMPOSE_ARGS
+    ;;
+    *)
+        # unknown option
+    ;;
+esac

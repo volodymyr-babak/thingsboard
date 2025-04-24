@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-version: '3.0'
-
 volumes:
     prometheus_data: {}
     grafana_data: {}
@@ -45,3 +43,8 @@ services:
     env_file:
       - monitoring/grafana/config.monitoring
     restart: always
+
+networks:
+  default:
+    external: true
+    name: tb-network

@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-version: '3.0'
-
 services:
   postgres:
     restart: always
@@ -27,23 +25,8 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - ./tb-node/postgres:/var/lib/postgresql/data
-  tb-core1:
-    env_file:
-      - tb-node.postgres.env
-    depends_on:
-      - postgres
-  tb-core2:
-    env_file:
-      - tb-node.postgres.env
-    depends_on:
-      - postgres
-  tb-rule-engine1:
-    env_file:
-      - tb-node.postgres.env
-    depends_on:
-      - postgres
-  tb-rule-engine2:
-    env_file:
-      - tb-node.postgres.env
-    depends_on:
-      - postgres
+
+networks:
+  default:
+    external: true
+    name: tb-network

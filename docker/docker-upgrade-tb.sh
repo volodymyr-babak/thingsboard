@@ -36,24 +36,18 @@ source compose-utils.sh
 
 COMPOSE_VERSION=$(composeVersion) || exit $?
 
-ADDITIONAL_COMPOSE_QUEUE_ARGS=$(additionalComposeQueueArgs) || exit $?
+ADDITIONAL_COMPOSE_QUEUE_ARGS=$(additionalComposeQueueArgs .tb-services) || exit $?
 
-ADDITIONAL_COMPOSE_ARGS=$(additionalComposeArgs) || exit $?
+ADDITIONAL_COMPOSE_ARGS=$(additionalComposeArgs .tb-services) || exit $?
 
-ADDITIONAL_CACHE_ARGS=$(additionalComposeCacheArgs) || exit $?
+ADDITIONAL_CACHE_ARGS=$(additionalComposeCacheArgs .tb-services) || exit $?
 
-ADDITIONAL_COMPOSE_EDQS_ARGS=$(additionalComposeEdqsArgs) || exit $?
-
-ADDITIONAL_STARTUP_SERVICES=$(additionalStartupServices) || exit $?
+ADDITIONAL_COMPOSE_EDQS_ARGS=$(additionalComposeEdqsArgs .tb-services) || exit $?
 
 COMPOSE_ARGS_PULL="\
       -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} ${ADDITIONAL_COMPOSE_ARGS} ${ADDITIONAL_COMPOSE_QUEUE_ARGS} ${ADDITIONAL_COMPOSE_EDQS_ARGS} \
       pull \
       tb-core1"
-
-COMPOSE_ARGS_UP="\
-      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} ${ADDITIONAL_COMPOSE_ARGS} ${ADDITIONAL_COMPOSE_QUEUE_ARGS} ${ADDITIONAL_COMPOSE_EDQS_ARGS} \
-      up -d ${ADDITIONAL_STARTUP_SERVICES}"
 
 COMPOSE_ARGS_RUN="\
       -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} ${ADDITIONAL_COMPOSE_ARGS} ${ADDITIONAL_COMPOSE_QUEUE_ARGS} ${ADDITIONAL_COMPOSE_EDQS_ARGS} \
@@ -63,12 +57,10 @@ COMPOSE_ARGS_RUN="\
 case $COMPOSE_VERSION in
     V2)
         docker compose $COMPOSE_ARGS_PULL
-        docker compose $COMPOSE_ARGS_UP
         docker compose $COMPOSE_ARGS_RUN
     ;;
     V1)
         docker-compose $COMPOSE_ARGS_PULL
-        docker-compose $COMPOSE_ARGS_UP
         docker-compose $COMPOSE_ARGS_RUN
     ;;
     *)

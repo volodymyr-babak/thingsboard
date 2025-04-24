@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-version: '3.0'
-
 services:
   # Redis sentinel
   # The latest version of Redis compatible with ThingsBoard is 7.2
@@ -52,69 +50,7 @@ services:
       - redis-master
       - redis-slave
 
-  # ThingsBoard setup to use redis-sentinel
-  tb-core1:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-core2:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-rule-engine1:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-rule-engine2:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-mqtt-transport1:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-mqtt-transport2:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-http-transport1:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-http-transport2:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-coap-transport:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-lwm2m-transport:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-snmp-transport:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-vc-executor1:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
-  tb-vc-executor2:
-    env_file:
-      - cache-redis-sentinel.env
-    depends_on:
-      - redis-sentinel
+networks:
+  default:
+    external: true
+    name: tb-network

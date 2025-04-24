@@ -14,48 +14,44 @@
 # limitations under the License.
 #
 
-version: '3.0'
-
 services:
-  tb-js-executor:
-    env_file:
-      - queue-aws-sqs.env
+  # ThingsBoard setup to use redis-sentinel
   tb-core1:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-core2:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-rule-engine1:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-rule-engine2:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-mqtt-transport1:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-mqtt-transport2:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-http-transport1:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-http-transport2:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-coap-transport:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-lwm2m-transport:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-snmp-transport:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-vc-executor1:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env
   tb-vc-executor2:
     env_file:
-      - queue-aws-sqs.env
+      - cache-redis-sentinel.env

@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-version: '3.0'
-
 services:
 # Redis cluster
 # The latest version of Redis compatible with ThingsBoard is 7.2
@@ -89,69 +87,7 @@ services:
       - 'REDIS_CLUSTER_REPLICAS=1'
       - 'REDIS_CLUSTER_CREATOR=yes'
 
-# ThingsBoard setup to use redis-cluster
-  tb-core1:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-core2:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-rule-engine1:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-rule-engine2:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-mqtt-transport1:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-mqtt-transport2:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-http-transport1:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-http-transport2:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-coap-transport:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-lwm2m-transport:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-snmp-transport:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-vc-executor1:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
-  tb-vc-executor2:
-    env_file:
-      - cache-redis-cluster.env
-    depends_on:
-      - redis-node-5
+networks:
+  default:
+    external: true
+    name: tb-network

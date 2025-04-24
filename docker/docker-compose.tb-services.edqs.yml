@@ -15,20 +15,15 @@
 #
 
 services:
-# Redis standalone
-# The latest version of Redis compatible with ThingsBoard is 7.2
-  redis:
-    restart: always
-    image: bitnami/redis:7.2
-    environment:
-      # ALLOW_EMPTY_PASSWORD is recommended only for development.
-      ALLOW_EMPTY_PASSWORD: "yes"
-    ports:
-      - '6379:6379'
-    volumes:
-      - ./tb-node/redis-data:/bitnami/redis/data
-
-networks:
-  default:
-    external: true
-    name: tb-network
+  tb-core1:
+    env_file:
+      - tb-core-edqs.env
+  tb-core2:
+    env_file:
+      - tb-core-edqs.env
+  tb-rule-engine1:
+    env_file:
+      - tb-rule-engine-edqs.env
+  tb-rule-engine2:
+    env_file:
+      - tb-rule-engine-edqs.env

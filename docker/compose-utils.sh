@@ -17,13 +17,16 @@
 
 function additionalComposeArgs() {
     source .env
+
+    SUFFIX=$1
+
     ADDITIONAL_COMPOSE_ARGS=""
     case $DATABASE in
         postgres)
-        ADDITIONAL_COMPOSE_ARGS="-f docker-compose.postgres.yml"
+        ADDITIONAL_COMPOSE_ARGS="-f docker-compose${SUFFIX}.postgres.yml"
         ;;
         hybrid)
-        ADDITIONAL_COMPOSE_ARGS="-f docker-compose.hybrid.yml"
+        ADDITIONAL_COMPOSE_ARGS="-f docker-compose${SUFFIX}.hybrid.yml"
         ;;
         *)
         echo "Unknown DATABASE value specified in the .env file: '${DATABASE}'. Should be either 'postgres' or 'hybrid'." >&2
@@ -34,28 +37,16 @@ function additionalComposeArgs() {
 
 function additionalComposeQueueArgs() {
     source .env
+
+    SUFFIX=$1
+
     ADDITIONAL_COMPOSE_QUEUE_ARGS=""
     case $TB_QUEUE_TYPE in
         kafka)
-        ADDITIONAL_COMPOSE_QUEUE_ARGS="-f docker-compose.kafka.yml"
-        ;;
-        confluent)
-        ADDITIONAL_COMPOSE_QUEUE_ARGS="-f docker-compose.confluent.yml"
-        ;;
-        aws-sqs)
-        ADDITIONAL_COMPOSE_QUEUE_ARGS="-f docker-compose.aws-sqs.yml"
-        ;;
-        pubsub)
-        ADDITIONAL_COMPOSE_QUEUE_ARGS="-f docker-compose.pubsub.yml"
-        ;;
-        rabbitmq)
-        ADDITIONAL_COMPOSE_QUEUE_ARGS="-f docker-compose.rabbitmq.yml"
-        ;;
-        service-bus)
-        ADDITIONAL_COMPOSE_QUEUE_ARGS="-f docker-compose.service-bus.yml"
+        ADDITIONAL_COMPOSE_QUEUE_ARGS="-f docker-compose${SUFFIX}.kafka.yml"
         ;;
         *)
-        echo "Unknown Queue service TB_QUEUE_TYPE value specified in the .env file: '${TB_QUEUE_TYPE}'. Should be either 'kafka' or 'confluent' or 'aws-sqs' or 'pubsub' or 'rabbitmq' or 'service-bus'." >&2
+        echo "Unknown Queue service TB_QUEUE_TYPE value specified in the .env file: '${TB_QUEUE_TYPE}'. Should be 'kafka'." >&2
         exit 1
     esac
     echo $ADDITIONAL_COMPOSE_QUEUE_ARGS
@@ -75,17 +66,20 @@ function additionalComposeMonitoringArgs() {
 
 function additionalComposeCacheArgs() {
     source .env
+
+    SUFFIX=$1
+
     CACHE_COMPOSE_ARGS=""
     CACHE="${CACHE:-redis}"
     case $CACHE in
         redis)
-        CACHE_COMPOSE_ARGS="-f docker-compose.redis.yml"
+        CACHE_COMPOSE_ARGS="-f docker-compose${SUFFIX}.redis.yml"
         ;;
         redis-cluster)
-        CACHE_COMPOSE_ARGS="-f docker-compose.redis-cluster.yml"
+        CACHE_COMPOSE_ARGS="-f docker-compose${SUFFIX}.redis-cluster.yml"
         ;;
         redis-sentinel)
-        CACHE_COMPOSE_ARGS="-f docker-compose.redis-sentinel.yml"
+        CACHE_COMPOSE_ARGS="-f docker-compose${SUFFIX}.redis-sentinel.yml"
         ;;
         *)
         echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'redis' or 'redis-cluster' or 'redis-sentinel'." >&2
@@ -131,9 +125,11 @@ function additionalStartupServices() {
 function additionalComposeEdqsArgs() {
     source .env
 
+    SUFFIX=$1
+
     if [ "$EDQS_ENABLED" = true ]
     then
-      ADDITIONAL_COMPOSE_EDQS_ARGS="-f docker-compose.edqs.yml"
+      ADDITIONAL_COMPOSE_EDQS_ARGS="-f docker-compose${SUFFIX}.edqs.yml"
       echo $ADDITIONAL_COMPOSE_EDQS_ARGS
     else
       echo ""
@@ -162,7 +158,7 @@ function permissionList() {
 
     if [ "$EDQS_ENABLED" = true ]; then
       PERMISSION_LIST="$PERMISSION_LIST
-      799  799  edqs/log
+      799  799  tb-edqs/log
       "
     fi
 

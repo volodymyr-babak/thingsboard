@@ -29,24 +29,16 @@ ADDITIONAL_CACHE_ARGS=$(additionalComposeCacheArgs .tb-services) || exit $?
 
 ADDITIONAL_COMPOSE_EDQS_ARGS=$(additionalComposeEdqsArgs .tb-services) || exit $?
 
-ADDITIONAL_COMPOSE_EDQS_SERVICES_ARGS=$(additionalComposeEdqsArgs) || exit $?
-
-COMPOSE_ARGS_PULL="\
-      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} ${ADDITIONAL_COMPOSE_ARGS} ${ADDITIONAL_COMPOSE_QUEUE_ARGS} ${ADDITIONAL_COMPOSE_EDQS_ARGS} ${ADDITIONAL_COMPOSE_EDQS_SERVICES_ARGS} \
-      pull"
-
-COMPOSE_ARGS_BUILD="\
-      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} ${ADDITIONAL_COMPOSE_ARGS} ${ADDITIONAL_COMPOSE_QUEUE_ARGS} ${ADDITIONAL_COMPOSE_EDQS_ARGS} ${ADDITIONAL_COMPOSE_EDQS_SERVICES_ARGS} \
-      up -d --no-deps --build"
+COMPOSE_ARGS="\
+      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} ${ADDITIONAL_COMPOSE_ARGS} ${ADDITIONAL_COMPOSE_QUEUE_ARGS} ${ADDITIONAL_COMPOSE_EDQS_ARGS} \
+      up -d"
 
 case $COMPOSE_VERSION in
     V2)
-        docker compose $COMPOSE_ARGS_PULL $@
-        docker compose $COMPOSE_ARGS_BUILD $@
+        docker compose $COMPOSE_ARGS
     ;;
     V1)
-        docker-compose $COMPOSE_ARGS_PULL $@
-        docker-compose $COMPOSE_ARGS_BUILD $@
+        docker-compose --compatibility $COMPOSE_ARGS
     ;;
     *)
         # unknown option

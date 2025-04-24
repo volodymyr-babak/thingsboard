@@ -16,5 +16,6 @@ tb-node/redis-sentinel-data-master/**
 tb-node/redis-sentinel-data-slave/**
 tb-node/redis-sentinel-data-sentinel/**
 tb-node/redis-data/**
+tb-edqs/log/**
 
 !.env

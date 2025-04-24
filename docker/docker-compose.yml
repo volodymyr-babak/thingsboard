@@ -14,19 +14,7 @@
 # limitations under the License.
 #
 
-
-version: '3.0'
-
 services:
-  zookeeper:
-    restart: always
-    image: "zookeeper:3.8.1"
-    ports:
-      - "2181"
-    environment:
-      ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=zookeeper:2888:3888;zookeeper:2181
-      ZOO_ADMINSERVER_ENABLED: "false"
   tb-js-executor:
     restart: always
     image: "${DOCKER_REPO}/${JS_EXECUTOR_DOCKER_NAME}:${TB_VERSION}"
@@ -56,7 +44,6 @@ services:
       - ./tb-node/conf:/config
       - ./tb-node/log:/var/log/thingsboard
     depends_on:
-      - zookeeper
       - tb-js-executor
       - tb-rule-engine1
       - tb-rule-engine2
@@ -82,7 +69,6 @@ services:
       - ./tb-node/conf:/config
       - ./tb-node/log:/var/log/thingsboard
     depends_on:
-      - zookeeper
       - tb-js-executor
       - tb-rule-engine1
       - tb-rule-engine2
@@ -106,7 +92,6 @@ services:
       - ./tb-node/conf:/config
       - ./tb-node/log:/var/log/thingsboard
     depends_on:
-      - zookeeper
       - tb-js-executor
   tb-rule-engine2:
     restart: always
@@ -128,7 +113,6 @@ services:
       - ./tb-node/conf:/config
       - ./tb-node/log:/var/log/thingsboard
     depends_on:
-      - zookeeper
       - tb-js-executor
   tb-mqtt-transport1:
     restart: always
@@ -144,7 +128,6 @@ services:
       - ./tb-transports/mqtt/conf:/config
       - ./tb-transports/mqtt/log:/var/log/tb-mqtt-transport
     depends_on:
-      - zookeeper
       - tb-core1
       - tb-core2
   tb-mqtt-transport2:
@@ -161,7 +144,6 @@ services:
       - ./tb-transports/mqtt/conf:/config
       - ./tb-transports/mqtt/log:/var/log/tb-mqtt-transport
     depends_on:
-      - zookeeper
       - tb-core1
       - tb-core2
   tb-http-transport1:
@@ -178,7 +160,6 @@ services:
       - ./tb-transports/http/conf:/config
       - ./tb-transports/http/log:/var/log/tb-http-transport
     depends_on:
-      - zookeeper
       - tb-core1
       - tb-core2
   tb-http-transport2:
@@ -195,7 +176,6 @@ services:
       - ./tb-transports/http/conf:/config
       - ./tb-transports/http/log:/var/log/tb-http-transport
     depends_on:
-      - zookeeper
       - tb-core1
       - tb-core2
   tb-coap-transport:
@@ -212,7 +192,6 @@ services:
       - ./tb-transports/coap/conf:/config
       - ./tb-transports/coap/log:/var/log/tb-coap-transport
     depends_on:
-      - zookeeper
       - tb-core1
       - tb-core2
   tb-lwm2m-transport:
@@ -230,7 +209,6 @@ services:
       - ./tb-transports/lwm2m/conf:/config
       - ./tb-transports/lwm2m/log:/var/log/tb-lwm2m-transport
     depends_on:
-      - zookeeper
       - tb-core1
       - tb-core2
   tb-snmp-transport:
@@ -247,7 +225,6 @@ services:
       - ./tb-transports/snmp/conf:/config
       - ./tb-transports/snmp/log:/var/log/tb-snmp-transport
     depends_on:
-      - zookeeper
       - tb-core1
       - tb-core2
   tb-web-ui1:
@@ -278,7 +255,6 @@ services:
       - ./tb-vc-executor/conf:/config
       - ./tb-vc-executor/log:/var/log/tb-vc-executor
     depends_on:
-      - zookeeper
       - tb-core1
       - tb-core2
   tb-vc-executor2:
@@ -295,7 +271,6 @@ services:
       - ./tb-vc-executor/conf:/config
       - ./tb-vc-executor/log:/var/log/tb-vc-executor
     depends_on:
-      - zookeeper
       - tb-core1
       - tb-core2
   haproxy:
@@ -303,17 +278,17 @@ services:
     container_name: "${LOAD_BALANCER_NAME}"
     image: thingsboard/haproxy-certbot:2.2.33-alpine
     volumes:
-     - ./haproxy/config:/config
-     - ./haproxy/letsencrypt:/etc/letsencrypt
-     - ./haproxy/certs.d:/usr/local/etc/haproxy/certs.d
+      - ./haproxy/config:/config
+      - ./haproxy/letsencrypt:/etc/letsencrypt
+      - ./haproxy/certs.d:/usr/local/etc/haproxy/certs.d
     ports:
-     - "80:80"
-     - "443:443"
-     - "1883:1883"
-     - "7070:7070"
-     - "9999:9999"
+      - "80:80"
+      - "443:443"
+      - "1883:1883"
+      - "7070:7070"
+      - "9999:9999"
     cap_add:
-     - NET_ADMIN
+      - NET_ADMIN
     environment:
       HTTP_PORT: 80
       HTTPS_PORT: 443
@@ -321,11 +296,16 @@ services:
       EDGES_RPC_PORT: 7070
       FORCE_HTTPS_REDIRECT: "false"
     links:
-        - tb-core1
-        - tb-core2
-        - tb-web-ui1
-        - tb-web-ui2
-        - tb-mqtt-transport1
-        - tb-mqtt-transport2
-        - tb-http-transport1
-        - tb-http-transport2
+      - tb-core1
+      - tb-core2
+      - tb-web-ui1
+      - tb-web-ui2
+      - tb-mqtt-transport1
+      - tb-mqtt-transport2
+      - tb-http-transport1
+      - tb-http-transport2
+
+networks:
+  default:
+    external: true
+    name: tb-network

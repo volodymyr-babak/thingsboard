@@ -14,17 +14,16 @@
 # limitations under the License.
 #
 
-version: '3.0'
-
 services:
-  tb-edqs1:
-    volumes:
-      - tb-edqs-log-volume:/var/log/tb-edqs
-  tb-edqs2:
-    volumes:
-      - tb-edqs-log-volume:/var/log/tb-edqs
-
-volumes:
-  tb-edqs-log-volume:
-    external:
-      name: ${TB_EDQS_LOG_VOLUME}
+  tb-core1:
+    env_file:
+      - tb-node.hybrid.env
+  tb-core2:
+    env_file:
+      - tb-node.hybrid.env
+  tb-rule-engine1:
+    env_file:
+      - tb-node.hybrid.env
+  tb-rule-engine2:
+    env_file:
+      - tb-node.hybrid.env

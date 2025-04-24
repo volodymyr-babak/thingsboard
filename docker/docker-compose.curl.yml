@@ -14,14 +14,16 @@
 # limitations under the License.
 #
 
-version: '3.0'
-
 services:
-  redis:
-    volumes:
-      - redis-data:/bitnami/redis/data
+  curl-client:
+    image: alpine
+    command: sh
+    stdin_open: true
+    tty: true
+    # Install curl when the container starts
+    entrypoint: sh -c 'apk add --no-cache curl && exec sh'
 
-volumes:
-  redis-data:
-    external:
-      name: ${REDIS_DATA_VOLUME}
+networks:
+  default:
+    external: true
+    name: tb-network

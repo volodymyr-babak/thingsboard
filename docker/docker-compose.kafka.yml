@@ -14,9 +14,16 @@
 # limitations under the License.
 #
 
-version: '3.0'
-
 services:
+  zookeeper:
+    restart: always
+    image: "zookeeper:3.8.1"
+    ports:
+      - "2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper:2888:3888;zookeeper:2181
+      ZOO_ADMINSERVER_ENABLED: "false"
   kafka:
     restart: always
     image: "bitnami/kafka:3.7.0"
@@ -26,73 +33,8 @@ services:
       - kafka.env
     depends_on:
       - zookeeper
-  tb-js-executor:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-core1:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-core2:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-rule-engine1:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-rule-engine2:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-mqtt-transport1:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-mqtt-transport2:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-http-transport1:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-http-transport2:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-coap-transport:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-lwm2m-transport:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-snmp-transport:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-vc-executor1:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
-  tb-vc-executor2:
-    env_file:
-      - queue-kafka.env
-    depends_on:
-      - kafka
+
+networks:
+  default:
+    external: true
+    name: tb-network
